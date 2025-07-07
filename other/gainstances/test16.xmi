@@ -1,0 +1,35 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="build" xmi:version="2.0">
+  <when Trigger="push:&#10;    branches:&#10;    - master&#10;"/>
+  <when Trigger="pull_request:&#10;    branches:&#10;    - master&#10;"/>
+  <environment Key="BUILD_TYPE" Value="Release"/>
+  <job Name="build">
+    <tool Name="ubuntu-latest"/>
+    <tool Name="container:&#10;    image: qianyy2333/smallkv-test:latest&#10;"/>
+    <command>
+      <tool Name="echo &quot;The job was automatically triggered by a ${{ github.event_name }} event.&quot;"/>
+    </command>
+    <command depends="//@job.0/@command.0">
+      <tool Name="echo &quot;This job is now running on a ${{ runner.os }} server hosted by GitHub!&quot;"/>
+    </command>
+    <command depends="//@job.0/@command.1">
+      <tool Name="echo &quot;The name of your branch is ${{ github.ref }} and your repository is ${{ github.repository }}.&quot;"/>
+    </command>
+    <command depends="//@job.0/@command.2">
+      <tool Name="echo &quot;The ${{ github.repository }} repository has been cloned to the runner.&quot;"/>
+    </command>
+    <command depends="//@job.0/@command.3">
+      <tool Name="actions/checkout@v3"/>
+      <parameter Parameter="submodules: 'true'&#10;"/>
+    </command>
+    <command Name="Configure CMake" depends="//@job.0/@command.4">
+      <tool Name="echo ${{github.workspace}} &amp;&amp; cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}"/>
+    </command>
+    <command Name="Build" depends="//@job.0/@command.5">
+      <tool Name="cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} -- -j 3"/>
+    </command>
+    <command Name="Test" depends="//@job.0/@command.6">
+      <tool Name="${{github.workspace}}/build/smallkv-unitest"/>
+    </command>
+  </job>
+</devops2:Pipeline>

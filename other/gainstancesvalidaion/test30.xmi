@@ -1,0 +1,26 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="Changelog contribution" xmi:version="2.0">
+  <when Trigger="workflow_dispatch:&#10;    inputs:&#10;        log:&#10;            description: Contributed log&#10;            required: true&#10;        small_title:&#10;            description: Small title&#10;            required: true&#10;        reporter:&#10;            description: Who contributed?&#10;            required: true&#10;"/>
+  <job Name="create-pull-request">
+    <tool Name="ubuntu-latest"/>
+    <command Name="Checkout">
+      <tool Name="actions/checkout@v3.0.2"/>
+    </command>
+    <command Name="Generate branch id" depends="//@job.0/@command.0">
+      <tool Name="echo &quot;id=$(date +'%Y-%m-%d-%H%M%S')&quot; &gt;&gt; $GITHUB_OUTPUT"/>
+    </command>
+    <command Name="Generate folder date" depends="//@job.0/@command.1">
+      <tool Name="echo &quot;folder_date=$(date +'%B%Y' | tr A-Z a-z)&quot; &gt;&gt; $GITHUB_OUTPUT"/>
+    </command>
+    <command Name="Generate today date" depends="//@job.0/@command.2">
+      <tool Name="echo &quot;current_date=$(date +'%Y-%m-%d')&quot; &gt;&gt; $GITHUB_OUTPUT"/>
+    </command>
+    <command Name="Create MDX file" depends="//@job.0/@command.3">
+      <tool Name="mkdir -p ./changelog/${{ steps.folder_date.outputs.folder_date }}&#10;cat &lt;&lt;&lt; &quot;${{ github.event.inputs.log }}&quot; &gt; ./changelog/${{ steps.folder_date.outputs.folder_date }}/${{ steps.current_date.outputs.current_date }}-${{ github.event.inputs.small_title }}.mdx&#10;"/>
+    </command>
+    <command Name="Create pull request towards the main branch" depends="//@job.0/@command.4">
+      <tool Name="peter-evans/create-pull-request@v4.1.1"/>
+      <parameter Parameter="token: ${{ secrets.CHANGELOG_CONTRIBUTION_TOKEN }}&#10;commit-message: 'feat(changelog): add new entry'&#10;committer: Github &lt;noreply@github.com&gt;&#10;title: 'feat(changelog): ${{ github.event.inputs.small_title }} ${{ steps.current_date.outputs.current_date&#10;    }}'&#10;body: 'Reporter: ${{ github.event.inputs.reporter }}&#10;&#10;&#10;    This PR is a new changelog contribution. It has been created automatically.&#10;&#10;&#10;    Make sure to review it carefully before merging it.&#10;&#10;    '&#10;branch: docs/changelog/${{ steps.branch_id.outputs.id }}&#10;delete-branch: true&#10;reviewers: bene2k1, nerda-codes, ldecarvalho-doc, RoRoJ, SamyOubouaziz&#10;labels: 'type: changelog&#10;&#10;    '&#10;author: Changelog bot &lt;changelog-bot@users.noreply.github.com&gt;&#10;"/>
+    </command>
+  </job>
+</devops2:Pipeline>

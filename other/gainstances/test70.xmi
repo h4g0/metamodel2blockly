@@ -1,0 +1,85 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="NAAGA ANDROID CI" xmi:version="2.0">
+  <when Trigger="pull_request:&#10;    branches:&#10;    - dev_android&#10;    paths:&#10;    - android/**&#10;"/>
+  <job Name="ktlint">
+    <tool Name="ubuntu-latest"/>
+    <tool Name="defaults:&#10;    run:&#10;        working-directory: ./android&#10;"/>
+    <command>
+      <tool Name="actions/checkout@v3"/>
+    </command>
+    <command Name="Setup JDK 11" depends="//@job.0/@command.0">
+      <tool Name="actions/setup-java@v3"/>
+      <parameter Parameter="distribution: temurin&#10;java-version: 11&#10;"/>
+    </command>
+    <command Name="Cache Gradle packages" depends="//@job.0/@command.1">
+      <tool Name="actions/cache@v2"/>
+      <parameter Parameter="path: '~/android/.gradle/caches&#10;&#10;    ~/android/.gradle/wrapper&#10;&#10;    '&#10;key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties',&#10;    '**/buildSrc/**/*.kt') }}&#10;restore-keys: '${{ runner.os }}-gradle-&#10;&#10;    '&#10;"/>
+    </command>
+    <command Name="Grant execute permission for gradlew" depends="//@job.0/@command.2">
+      <tool Name="chmod +x gradlew"/>
+    </command>
+    <command Name="Add Local Properties" depends="//@job.0/@command.3">
+      <tool Name="echo BASE_URL=\&quot;$API_KEY\&quot; &gt;&gt; ./local.properties&#10;echo KAKAO_NATIVE_APP_KEY=\&quot;KAKAO_APP_KEY\&quot; &gt;&gt; ./local.properties&#10;echo kakao_redirection_scheme=\&quot;KAKAO_SCHEME\&quot; &gt;&gt; ./local.properties&#10;"/>
+      <parameter Parameter="API_KEY: ${{ secrets.BASE_URL }}&#10;KAKAO_APP_KEY: ${{ secrets.KAKAO_NATIVE_APP_KEY }}&#10;KAKAO_SCHEME: ${{ secrets.KAKAO_REDIRECTION_SCHEME }}&#10;"/>
+    </command>
+    <command Name="Run ktlint" depends="//@job.0/@command.4">
+      <tool Name="./gradlew ktlintCheck"/>
+    </command>
+  </job>
+  <job Name="build">
+    <tool Name="ubuntu-latest"/>
+    <tool Name="defaults:&#10;    run:&#10;        working-directory: ./android&#10;"/>
+    <command>
+      <tool Name="actions/checkout@v3"/>
+    </command>
+    <command Name="Setup JDK 11" depends="//@job.1/@command.0">
+      <tool Name="actions/setup-java@v3"/>
+      <parameter Parameter="distribution: temurin&#10;java-version: 11&#10;"/>
+    </command>
+    <command Name="Cache Gradle packages" depends="//@job.1/@command.1">
+      <tool Name="actions/cache@v2"/>
+      <parameter Parameter="path: '~/android/.gradle/caches&#10;&#10;    ~/android/.gradle/wrapper&#10;&#10;    '&#10;key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties',&#10;    '**/buildSrc/**/*.kt') }}&#10;restore-keys: '${{ runner.os }}-gradle-&#10;&#10;    '&#10;"/>
+    </command>
+    <command Name="Grant execute permission for gradlew" depends="//@job.1/@command.2">
+      <tool Name="chmod +x gradlew"/>
+    </command>
+    <command Name="Add Local Properties" depends="//@job.1/@command.3">
+      <tool Name="echo BASE_URL=\&quot;$API_KEY\&quot; &gt;&gt; ./local.properties&#10;echo KAKAO_NATIVE_APP_KEY=\&quot;KAKAO_APP_KEY\&quot; &gt;&gt; ./local.properties&#10;echo kakao_redirection_scheme=\&quot;KAKAO_SCHEME\&quot; &gt;&gt; ./local.properties&#10;"/>
+      <parameter Parameter="API_KEY: ${{ secrets.BASE_URL }}&#10;KAKAO_APP_KEY: ${{ secrets.KAKAO_NATIVE_APP_KEY }}&#10;KAKAO_SCHEME: ${{ secrets.KAKAO_REDIRECTION_SCHEME }}&#10;"/>
+    </command>
+    <command Name="Add Google Service Json file" depends="//@job.1/@command.4">
+      <tool Name="echo '${{ secrets.GOOGLE_SERVICES_JSON_FILE }}' &gt; ./app/google-services.json"/>
+    </command>
+    <command Name="Run Build" depends="//@job.1/@command.5">
+      <tool Name="./gradlew assembleDebug"/>
+    </command>
+  </job>
+  <job Name="test">
+    <tool Name="ubuntu-latest"/>
+    <tool Name="defaults:&#10;    run:&#10;        working-directory: ./android&#10;"/>
+    <command>
+      <tool Name="actions/checkout@v3"/>
+    </command>
+    <command Name="Setup JDK 11" depends="//@job.2/@command.0">
+      <tool Name="actions/setup-java@v3"/>
+      <parameter Parameter="distribution: temurin&#10;java-version: 11&#10;"/>
+    </command>
+    <command Name="Cache Gradle packages" depends="//@job.2/@command.1">
+      <tool Name="actions/cache@v2"/>
+      <parameter Parameter="path: '~/android/.gradle/caches&#10;&#10;    ~/android/.gradle/wrapper&#10;&#10;    '&#10;key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties',&#10;    '**/buildSrc/**/*.kt') }}&#10;restore-keys: '${{ runner.os }}-gradle-&#10;&#10;    '&#10;"/>
+    </command>
+    <command Name="Grant execute permission for gradlew" depends="//@job.2/@command.2">
+      <tool Name="chmod +x gradlew"/>
+    </command>
+    <command Name="Add Local Properties" depends="//@job.2/@command.3">
+      <tool Name="echo BASE_URL=\&quot;$API_KEY\&quot; &gt;&gt; ./local.properties&#10;echo KAKAO_NATIVE_APP_KEY=\&quot;KAKAO_APP_KEY\&quot; &gt;&gt; ./local.properties&#10;echo kakao_redirection_scheme=\&quot;KAKAO_SCHEME\&quot; &gt;&gt; ./local.properties&#10;"/>
+      <parameter Parameter="API_KEY: ${{ secrets.BASE_URL }}&#10;KAKAO_APP_KEY: ${{ secrets.KAKAO_NATIVE_APP_KEY }}&#10;KAKAO_SCHEME: ${{ secrets.KAKAO_REDIRECTION_SCHEME }}&#10;"/>
+    </command>
+    <command Name="Add Google Service Json file" depends="//@job.2/@command.4">
+      <tool Name="echo '${{ secrets.GOOGLE_SERVICES_JSON_FILE }}' &gt; ./app/google-services.json"/>
+    </command>
+    <command Name="Run Build" depends="//@job.2/@command.5">
+      <tool Name="./gradlew testDebugUnitTest"/>
+    </command>
+  </job>
+</devops2:Pipeline>

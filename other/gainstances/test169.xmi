@@ -1,0 +1,29 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="deploy-deno-site" xmi:version="2.0">
+  <when Trigger="push: null&#10;"/>
+  <job Name="deploy">
+    <permission Key="id-token" Value="write"/>
+    <permission Key="contents" Value="read"/>
+    <tool Name="ubuntu-latest"/>
+    <command Name="Clone repository">
+      <tool Name="actions/checkout@v2"/>
+    </command>
+    <command depends="//@job.0/@command.0">
+      <tool Name="pnpm/action-setup@v2.2.2"/>
+      <parameter Parameter="version: 7.17.0&#10;"/>
+    </command>
+    <command Name="Install dependencies" depends="//@job.0/@command.1">
+      <tool Name="pnpm install"/>
+    </command>
+    <command Name="Build" depends="//@job.0/@command.2">
+      <tool Name="pnpm run build"/>
+    </command>
+    <command Name="copy dist" depends="//@job.0/@command.3">
+      <tool Name="cp -a ./example/dist/ serve/web"/>
+    </command>
+    <command Name="Upload to Deno Deploy" depends="//@job.0/@command.4">
+      <tool Name="denoland/deployctl@v1"/>
+      <parameter Parameter="project: dumi-theme-chakra&#10;entrypoint: main.ts&#10;root: serve&#10;"/>
+    </command>
+  </job>
+</devops2:Pipeline>

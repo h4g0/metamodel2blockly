@@ -1,0 +1,16 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="" xmi:version="2.0">
+  <tool Name="matrix:&#10;    include:&#10;    -   os: osx&#10;        osx_image: xcode10.2&#10;        language: node_js&#10;        node_js: '12'&#10;        env:&#10;        - ELECTRON_CACHE=$HOME/.cache/electron&#10;        - ELECTRON_BUILDER_CACHE=$HOME/.cache/electron-builder&#10;    -   os: linux&#10;        services: docker&#10;        language: generic&#10;"/>
+  <tool Name="cache:&#10;    directories:&#10;    - node_modules&#10;    - $HOME/.cache/electron&#10;    - $HOME/.cache/electron-builder&#10;"/>
+  <job Name="script">
+    <command Name="">
+      <tool Name="if [ &quot;$TRAVIS_OS_NAME&quot; == &quot;linux&quot; ]; then&#10;  docker run --rm \&#10;    --env-file &lt;(env | grep -v '\r' | grep -iE 'DEBUG|NODE_|ELECTRON_|YARN_|NPM_|CI|CIRCLE|TRAVIS|APPVEYOR_|CSC_|_TOKEN|_KEY|AWS_|STRIP|BUILD_') \&#10;    -v ${PWD}:/project \&#10;    -v ~/.cache/electron:/root/.cache/electron \&#10;    -v ~/.cache/electron-builder:/root/.cache/electron-builder \&#10;    electronuserland/builder:wine \&#10;    /bin/bash -c &quot;yarn --link-duplicates --pure-lockfile &amp;&amp; yarn release --linux --win&quot;&#10;else&#10;  yarn release&#10;fi&#10;"/>
+    </command>
+  </job>
+  <job Name="before_cache">
+    <command Name="">
+      <tool Name="rm -rf $HOME/.cache/electron-builder/wine"/>
+    </command>
+  </job>
+  <when Trigger="except:&#10;- /^v\d+\.\d+\.\d+$/&#10;"/>
+</devops2:Pipeline>

@@ -1,0 +1,16 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="" xmi:version="2.0">
+  <tool Name="language: ruby&#10;"/>
+  <tool Name="cache: bundler&#10;"/>
+  <tool Name="rvm:&#10;- ruby-head&#10;- ruby&#10;- jruby-head&#10;- jruby&#10;- 2.1.0&#10;- 2.0.0&#10;- 1.9.3&#10;- rbx-2&#10;"/>
+  <tool Name="matrix:&#10;    fast_finish: true&#10;    allow_failures:&#10;    -   rvm: ruby-head&#10;    -   rvm: ruby&#10;    -   rvm: jruby-head&#10;    -   rvm: jruby&#10;    -   rvm: rbx-2&#10;"/>
+  <tool Name="notifications:&#10;    email: false&#10;"/>
+  <tool Name="services:&#10;- redis-server&#10;"/>
+  <job Name="bundler_args"/>
+  <job Name="env">
+    <command Name="">
+      <tool Name="CODECLIMATE_REPO_TOKEN=04a9fef09063cdef2f62cf46531329ad01a9383e3de8270e112480052774f676"/>
+    </command>
+  </job>
+  <environment Key="CODECLIMATE_REPO_TOKEN=04a9fef09063cdef2f62cf46531329ad01a9383e3de8270e112480052774f676" Value="CODECLIMATE_REPO_TOKEN=04a9fef09063cdef2f62cf46531329ad01a9383e3de8270e112480052774f676"/>
+</devops2:Pipeline>

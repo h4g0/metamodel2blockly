@@ -1,0 +1,59 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="Deploy GH pages" xmi:version="2.0">
+  <permission Key="contents" Value="read"/>
+  <permission Key="pages" Value="write"/>
+  <permission Key="id-token" Value="write"/>
+  <permission Key="contents" Value="read"/>
+  <permission Key="pages" Value="write"/>
+  <permission Key="id-token" Value="write"/>
+  <when Trigger="push:&#10;    branches:&#10;    - master&#10;"/>
+  <when Trigger="workflow_dispatch: null&#10;"/>
+  <environment Key="concurrency" Value="group: pages&#10;cancel-in-progress: true&#10;"/>
+  <job Name="deploy">
+    <tool Name="ubuntu-latest"/>
+    <command Name="Install mdbook">
+      <tool Name="mkdir mdbook&#10;curl -sSL https://github.com/rust-lang/mdBook/releases/download/${MDBOOK_VERSION}/mdbook-${MDBOOK_VERSION}-x86_64-unknown-linux-gnu.tar.gz | tar -xz --directory=./mdbook&#10;echo `pwd`/mdbook &gt;&gt; $GITHUB_PATH&#10;"/>
+      <parameter Parameter="MDBOOK_VERSION: v0.4.27&#10;"/>
+    </command>
+    <command Name="Checkout master" depends="//@job.0/@command.0">
+      <tool Name="actions/checkout@v4"/>
+      <parameter Parameter="path: main&#10;"/>
+    </command>
+    <command Name="Checkout stable/v0.4" depends="//@job.0/@command.1">
+      <tool Name="actions/checkout@v4"/>
+      <parameter Parameter="path: stable-v0.4&#10;ref: stable/v0.4&#10;"/>
+    </command>
+    <command Name="Setup Pages" depends="//@job.0/@command.2">
+      <tool Name="actions/configure-pages@v3"/>
+    </command>
+    <command Name="Build mdbook for main branch" depends="//@job.0/@command.3">
+      <tool Name="mdbook build"/>
+    </command>
+    <command Name="Build mdbook for stable/v0.4 branch" depends="//@job.0/@command.4">
+      <tool Name="mdbook build"/>
+    </command>
+    <command depends="//@job.0/@command.5">
+      <tool Name="actions/checkout@v4"/>
+      <parameter Parameter="repository: highlightjs/highlight.js&#10;ref: 10.7.3&#10;path: highlightjs&#10;"/>
+    </command>
+    <command Name="Build custom highlight.js" depends="//@job.0/@command.6">
+      <tool Name="npm install&#10;node tools/build.js :common cmake yaml&#10;"/>
+    </command>
+    <command Name="Override highlightjs" depends="//@job.0/@command.7">
+      <tool Name="cp highlightjs/build/highlight.min.js main/doc/book/highlight.js&#10;cp highlightjs/build/highlight.min.js stable-v0.4/doc/book/highlight.js&#10;"/>
+    </command>
+    <command Name="Copy stable doc into main" depends="//@job.0/@command.8">
+      <tool Name="mkdir main/doc/book/v0.4 &amp;&amp; cp -a stable-v0.4/doc/book/. main/doc/book/v0.4/"/>
+    </command>
+    <command Name="Debug print" depends="//@job.0/@command.9">
+      <tool Name="ls -la main/doc/book/v0.4"/>
+    </command>
+    <command Name="Upload artifact" depends="//@job.0/@command.10">
+      <tool Name="actions/upload-pages-artifact@v2"/>
+      <parameter Parameter="path: main/doc/book&#10;"/>
+    </command>
+    <command Name="Deploy to GitHub Pages" depends="//@job.0/@command.11">
+      <tool Name="actions/deploy-pages@v2"/>
+    </command>
+  </job>
+</devops2:Pipeline>

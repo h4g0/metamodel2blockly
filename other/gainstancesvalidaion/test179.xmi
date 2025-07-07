@@ -1,0 +1,59 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="test" xmi:version="2.0">
+  <when Trigger="push:&#10;    branches:&#10;    - master&#10;"/>
+  <when Trigger="pull_request:&#10;    branches:&#10;    - master&#10;"/>
+  <job Name="linux">
+    <tool Name="ubuntu-latest"/>
+    <tool Name="strategy:&#10;    matrix:&#10;        node-version:&#10;        - 10.x&#10;        - 12.x&#10;        - 14.x&#10;"/>
+    <command>
+      <tool Name="actions/checkout@v2"/>
+    </command>
+    <command Name="Use Node.js ${{ matrix.node-version }}" depends="//@job.0/@command.0">
+      <tool Name="actions/setup-node@v1"/>
+      <parameter Parameter="node-version: ${{ matrix.node-version }}&#10;"/>
+    </command>
+    <command depends="//@job.0/@command.1">
+      <tool Name="npm install"/>
+    </command>
+    <command depends="//@job.0/@command.2">
+      <tool Name="npm test"/>
+      <parameter Parameter="CI: true&#10;"/>
+    </command>
+  </job>
+  <job Name="macos">
+    <tool Name="macos-latest"/>
+    <tool Name="strategy:&#10;    matrix:&#10;        node-version:&#10;        - 10.x&#10;        - 12.x&#10;        - 14.x&#10;"/>
+    <command>
+      <tool Name="actions/checkout@v2"/>
+    </command>
+    <command Name="Use Node.js ${{ matrix.node-version }}" depends="//@job.1/@command.0">
+      <tool Name="actions/setup-node@v1"/>
+      <parameter Parameter="node-version: ${{ matrix.node-version }}&#10;"/>
+    </command>
+    <command depends="//@job.1/@command.1">
+      <tool Name="npm install"/>
+    </command>
+    <command depends="//@job.1/@command.2">
+      <tool Name="npm test"/>
+      <parameter Parameter="CI: true&#10;"/>
+    </command>
+  </job>
+  <job Name="windows">
+    <tool Name="windows-latest"/>
+    <tool Name="strategy:&#10;    matrix:&#10;        node-version:&#10;        - 10.x&#10;        - 12.x&#10;        - 14.x&#10;"/>
+    <command>
+      <tool Name="actions/checkout@v2"/>
+    </command>
+    <command Name="Use Node.js ${{ matrix.node-version }}" depends="//@job.2/@command.0">
+      <tool Name="actions/setup-node@v1"/>
+      <parameter Parameter="node-version: ${{ matrix.node-version }}&#10;"/>
+    </command>
+    <command depends="//@job.2/@command.1">
+      <tool Name="npm install"/>
+    </command>
+    <command depends="//@job.2/@command.2">
+      <tool Name="npm test"/>
+      <parameter Parameter="CI: true&#10;"/>
+    </command>
+  </job>
+</devops2:Pipeline>

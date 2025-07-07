@@ -1,0 +1,13 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="" xmi:version="2.0">
+  <tool Name="osx_image: xcode7.3&#10;"/>
+  <tool Name="language: objective-c&#10;"/>
+  <job Name="script">
+    <command Name="">
+      <tool Name="set -o pipefail &amp;&amp; xcodebuild test -enableCodeCoverage YES -workspace Example/TKThemeConfig.xcworkspace -scheme TKThemeConfig-Example -sdk iphonesimulator9.3 ONLY_ACTIVE_ARCH=NO | xcpretty"/>
+    </command>
+    <command Name="" depends="//@job.0/@command.0">
+      <tool Name="pod lib lint"/>
+    </command>
+  </job>
+</devops2:Pipeline>

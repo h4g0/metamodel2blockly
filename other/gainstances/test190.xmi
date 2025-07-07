@@ -1,0 +1,19 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="Update issue Status" xmi:version="2.0">
+  <when Trigger="issues:&#10;    types:&#10;    - closed&#10;"/>
+  <job Name="update_issue">
+    <tool Name="ubuntu-latest"/>
+    <command Name="Get project data">
+      <tool Name="gh api graphql --header 'GraphQL-Features: projects_next_graphql' -f query='&#10;  query($org: String!, $number: Int!) {&#10;    organization(login: $org){&#10;      projectNext(number: $number) {&#10;        id&#10;        fields(first:20) {&#10;          nodes {&#10;            id&#10;            name&#10;            settings&#10;          }&#10;        }&#10;      }&#10;    }&#10;  }' -f org=$ORGANIZATION -F number=$PROJECT_NUMBER &gt; project_data.json&#10;&#10;echo 'PROJECT_ID='$(jq '.data.organization.projectNext.id' project_data.json) &gt;&gt; $GITHUB_ENV&#10;echo 'STATUS_FIELD_ID='$(jq '.data.organization.projectNext.fields.nodes[] | select(.name== &quot;Status&quot;) | .id' project_data.json) &gt;&gt; $GITHUB_ENV&#10;&#10;echo &quot;$PROJECT_ID&quot;&#10;echo &quot;$STATUS_FIELD_ID&quot;&#10;&#10;echo 'DONE_ID='$(jq '.data.organization.projectNext.fields.nodes[] | select(.name== &quot;Status&quot;) | .settings | fromjson | .options[] | select(.name== &quot;Done&quot;) | .id' project_data.json) &gt;&gt; $GITHUB_ENV&#10;echo &quot;$DONE_ID&quot;&#10;"/>
+      <parameter Parameter="GITHUB_TOKEN: ${{secrets.GHPROJECT_TOKEN}}&#10;ORGANIZATION: specklesystems&#10;PROJECT_NUMBER: 9&#10;"/>
+    </command>
+    <command Name="Add Issue to project" depends="//@job.0/@command.0">
+      <tool Name="item_id=&quot;$( gh api graphql --header 'GraphQL-Features: projects_next_graphql' -f query='&#10;  mutation($project:ID!, $id:ID!) {&#10;    addProjectNextItem(input: {projectId: $project, contentId: $id}) {&#10;      projectNextItem {&#10;        id&#10;      }&#10;    }&#10;  }' -f project=$PROJECT_ID -f id=$ISSUE_ID --jq '.data.addProjectNextItem.projectNextItem.id')&quot;&#10;&#10;echo 'ITEM_ID='$item_id &gt;&gt; $GITHUB_ENV&#10;"/>
+      <parameter Parameter="GITHUB_TOKEN: ${{secrets.GHPROJECT_TOKEN}}&#10;ISSUE_ID: ${{ github.event.issue.node_id }}&#10;"/>
+    </command>
+    <command Name="Update Status" depends="//@job.0/@command.1">
+      <tool Name="gh api graphql --header 'GraphQL-Features: projects_next_graphql' -f query='&#10;  mutation($project:ID!, $status:ID!, $id:ID!, $value:String!) {&#10;    set_status: updateProjectNextItemField(&#10;      input: {&#10;        projectId: $project&#10;        itemId: $id&#10;        fieldId: $status&#10;        value: $value&#10;      }&#10;    ) {&#10;      projectNextItem {&#10;        id&#10;      }&#10;    }&#10;  }' -f project=$PROJECT_ID -f status=$STATUS_FIELD_ID -f id=$ITEM_ID -f value=${{ env.DONE_ID }}&#10;"/>
+      <parameter Parameter="GITHUB_TOKEN: ${{secrets.GHPROJECT_TOKEN}}&#10;ISSUE_ID: ${{ github.event.issue.node_id }}&#10;"/>
+    </command>
+  </job>
+</devops2:Pipeline>

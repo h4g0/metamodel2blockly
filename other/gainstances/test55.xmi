@@ -1,0 +1,24 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="CI — Yarn test and lint" xmi:version="2.0">
+  <when Trigger="workflow_dispatch: null&#10;"/>
+  <when Trigger="push: null&#10;"/>
+  <job Name="build-test-and-lint">
+    <tool Name="ubuntu-latest"/>
+    <command Name="Clone repository">
+      <tool Name="actions/checkout@v3"/>
+    </command>
+    <command Name="Use Node.js 16" depends="//@job.0/@command.0">
+      <tool Name="actions/setup-node@v3"/>
+      <parameter Parameter="node-version: 16.x&#10;cache: yarn&#10;"/>
+    </command>
+    <command Name="Install dependencies" depends="//@job.0/@command.1">
+      <tool Name="yarn install"/>
+    </command>
+    <command Name="Run tests" depends="//@job.0/@command.2">
+      <tool Name="yarn test"/>
+    </command>
+    <command Name="Run linter" depends="//@job.0/@command.3">
+      <tool Name="yarn lint"/>
+    </command>
+  </job>
+</devops2:Pipeline>

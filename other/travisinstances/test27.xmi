@@ -1,0 +1,13 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="" xmi:version="2.0">
+  <tool Name="sudo: false&#10;"/>
+  <tool Name="language: node_js&#10;"/>
+  <tool Name="cache: yarn&#10;"/>
+  <tool Name="notifications:&#10;    email: false&#10;"/>
+  <tool Name="node_js:&#10;- stable&#10;- lts/*&#10;"/>
+  <job Name="before_install"/>
+  <job Name="before_script"/>
+  <job Name="after_script"/>
+  <job Name="after_success"/>
+  <when Trigger="only:&#10;- master&#10;- /^greenkeeper/.*$/&#10;"/>
+</devops2:Pipeline>

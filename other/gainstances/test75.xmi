@@ -1,0 +1,33 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="Build and Publish" xmi:version="2.0">
+  <when Trigger="push:&#10;    tags:&#10;    - v*&#10;    branches:&#10;    - main&#10;"/>
+  <job Name="build-and-publish">
+    <environment Key="IMAGE_REGISTRY" Value="quay.io/navidys"/>
+    <environment Key="IMAGE_NAMESPACE" Value="${{ github.event.repository.name }}"/>
+    <tool Name="ubuntu-latest"/>
+    <command Name="Check out the repo">
+      <tool Name="actions/checkout@v4"/>
+    </command>
+    <command Name="Setup Go" depends="//@job.0/@command.0">
+      <tool Name="actions/setup-go@v4"/>
+      <parameter Parameter="go-version: '&gt;=1.19.0'&#10;"/>
+    </command>
+    <command Name="Build binary" depends="//@job.0/@command.1">
+      <tool Name="make binary&#10;"/>
+    </command>
+    <command Name="Get image tags" depends="//@job.0/@command.2">
+      <tool Name="echo -n ::set-output name=IMAGE_TAG::&#10;VERSION=$(cat podman-tui.spec.rpkg | grep Version: | awk -F: '{print $2}' | sed 's/ //g')&#10;RELEASE=$(cat podman-tui.spec.rpkg | grep Release: | awk -F: '{print $2}' | sed 's/ //g')&#10;if [[ &quot;${RELEASE}&quot; =~ &quot;dev.&quot; ]] ; then&#10;  echo &quot;develop&quot;&#10;else&#10;  echo &quot;v${VERSION} latest&quot;&#10;fi&#10;"/>
+    </command>
+    <command Name="Build container image" depends="//@job.0/@command.3">
+      <tool Name="redhat-actions/buildah-build@v2"/>
+      <parameter Parameter="image: ${{ env.IMAGE_NAMESPACE }}&#10;tags: ${{ steps.image_tag.outputs.IMAGE_TAG }}&#10;containerfiles: './Containerfile&#10;&#10;    '&#10;"/>
+    </command>
+    <command Name="Publish container image" depends="//@job.0/@command.4">
+      <tool Name="redhat-actions/push-to-registry@v2"/>
+      <parameter Parameter="image: ${{ steps.build_image.outputs.image }}&#10;tags: ${{ steps.build_image.outputs.tags }}&#10;registry: ${{ env.IMAGE_REGISTRY }}&#10;username: ${{ secrets.REGISTRY_USERNAME }}&#10;password: ${{ secrets.REGISTRY_PASSWORD }}&#10;"/>
+    </command>
+    <command Name="Print image url" depends="//@job.0/@command.5">
+      <tool Name="echo &quot;Image pushed to ${{ steps.push_to_quay.outputs.registry-paths }}&quot;"/>
+    </command>
+  </job>
+</devops2:Pipeline>

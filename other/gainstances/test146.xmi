@@ -1,0 +1,26 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="Build PR" xmi:version="2.0">
+  <when Trigger="pull_request: null&#10;"/>
+  <job Name="lint">
+    <tool Name="ubuntu-latest"/>
+    <command Name="Checkout">
+      <tool Name="actions/checkout@v2"/>
+    </command>
+    <command Name="Setup Node.js" depends="//@job.0/@command.0">
+      <tool Name="actions/setup-node@v1"/>
+      <parameter Parameter="node-version: 18&#10;"/>
+    </command>
+    <command Name="Install dependencies" depends="//@job.0/@command.1">
+      <tool Name="yarn --frozen-lockfile --ignore-scripts"/>
+    </command>
+    <command Name="Prettier check" depends="//@job.0/@command.2">
+      <tool Name="yarn prettier --check &quot;./**/*.{js,md}&quot;"/>
+    </command>
+    <command Name="Lint" depends="//@job.0/@command.3">
+      <tool Name="yarn eslint &quot;./**/*.js&quot;"/>
+    </command>
+    <command Name="Test" depends="//@job.0/@command.4">
+      <tool Name="yarn jest"/>
+    </command>
+  </job>
+</devops2:Pipeline>

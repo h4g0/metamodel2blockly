@@ -1,0 +1,29 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="CI" xmi:version="2.0">
+  <when Trigger="push: null&#10;"/>
+  <when Trigger="pull_request: null&#10;"/>
+  <job Name="stan">
+    <tool Name="ubuntu-20.04"/>
+    <tool Name="strategy:&#10;    fail-fast: false&#10;    matrix:&#10;        php-versions:&#10;        - '7.4'&#10;        - '8.0'&#10;        - '8.1'&#10;        - '8.2'&#10;        - '8.3'&#10;"/>
+    <command Name="Checkout">
+      <tool Name="actions/checkout@v3"/>
+    </command>
+    <command Name="Setup PHP" depends="//@job.0/@command.0">
+      <tool Name="shivammathur/setup-php@v2"/>
+      <parameter Parameter="php-version: ${{ matrix.php-versions }}&#10;extensions: mbstring, xml, ctype, iconv, intl, pdo_sqlite, mysql, pdo, curl&#10;coverage: xdebug&#10;"/>
+    </command>
+    <command Name="Get composer cache directory" depends="//@job.0/@command.1">
+      <tool Name="echo &quot;dir=$(composer config cache-files-dir)&quot; &gt;&gt; $GITHUB_OUTPUT"/>
+    </command>
+    <command Name="Cache composer dependencies" depends="//@job.0/@command.2">
+      <tool Name="actions/cache@v3"/>
+      <parameter Parameter="path: ${{ steps.composer-cache.outputs.dir }}&#10;key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}&#10;restore-keys: ${{ runner.os }}-composer-&#10;"/>
+    </command>
+    <command Name="Install Composer dependencies" depends="//@job.0/@command.3">
+      <tool Name="composer install --no-progress --prefer-dist --optimize-autoloader"/>
+    </command>
+    <command Name="Run php static analysis" depends="//@job.0/@command.4">
+      <tool Name="composer run-script tests"/>
+    </command>
+  </job>
+</devops2:Pipeline>

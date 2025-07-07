@@ -1,0 +1,24 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<ecore:EClass xmlns:xmi="http://www.omg.org/XMI" xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" name="Pipeline" xmi:version="2.0">
+  <eStructuralFeatures xsi:type="ecore:EReference" name="when" upperBound="-1" containment="true">
+    <eType href="..\devops2.ecore#//When" xsi:type="ecore:EClass"/>
+  </eStructuralFeatures>
+  <eStructuralFeatures xsi:type="ecore:EReference" name="job" upperBound="-1" containment="true">
+    <eType href="..\devops2.ecore#//Job" xsi:type="ecore:EClass"/>
+  </eStructuralFeatures>
+  <eStructuralFeatures xsi:type="ecore:EAttribute" name="Name">
+    <eType href="http://www.eclipse.org/emf/2002/Ecore#//EString" xsi:type="ecore:EDataType"/>
+  </eStructuralFeatures>
+  <eStructuralFeatures xsi:type="ecore:EReference" name="tool" upperBound="-1" containment="true">
+    <eType href="..\devops2.ecore#//Tool" xsi:type="ecore:EClass"/>
+  </eStructuralFeatures>
+  <eStructuralFeatures xsi:type="ecore:EReference" name="environment" upperBound="-1" containment="true">
+    <eType href="..\devops2.ecore#//Environment" xsi:type="ecore:EClass"/>
+  </eStructuralFeatures>
+  <eStructuralFeatures xsi:type="ecore:EReference" name="permission" upperBound="-1" containment="true">
+    <eType href="..\devops2.ecore#//Permission" xsi:type="ecore:EClass"/>
+  </eStructuralFeatures>
+  <eStructuralFeatures xsi:type="ecore:EAttribute" name="Concurrent" defaultValueLiteral="true">
+    <eType href="http://www.eclipse.org/emf/2002/Ecore#//EBoolean" xsi:type="ecore:EDataType"/>
+  </eStructuralFeatures>
+</ecore:EClass>

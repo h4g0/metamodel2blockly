@@ -1,0 +1,16 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="CI" xmi:version="2.0">
+  <when Trigger="push: null&#10;"/>
+  <when Trigger="pull_request: null&#10;"/>
+  <job Name="container">
+    <tool Name="ubuntu-latest"/>
+    <tool Name="container:&#10;    image: ballerina/ballerina:2201.4.1&#10;    options: --user root&#10;"/>
+    <command>
+      <tool Name="actions/checkout@v2"/>
+    </command>
+    <command Name="Build with Gradle" depends="//@job.0/@command.0">
+      <tool Name="./gradlew build -Prelease=false -Premote=true&#10;"/>
+      <parameter Parameter="JAVA_OPTS: -DBALLERINA_DEV_COMPILE_BALLERINA_ORG=true&#10;GRADLE_USER_HOME: ~/.gradle&#10;"/>
+    </command>
+  </job>
+</devops2:Pipeline>

@@ -1,0 +1,80 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="CI" xmi:version="2.0">
+  <when Trigger="push: null&#10;"/>
+  <when Trigger="pull_request: null&#10;"/>
+  <environment Key="concurrency" Value="group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}&#10;cancel-in-progress: true&#10;"/>
+  <job Name="build">
+    <tool Name="ubuntu-latest"/>
+    <tool Name="strategy:&#10;    matrix:&#10;        php:&#10;        - '7.4'&#10;        - '8.0'&#10;        - '8.1'&#10;        - '8.2'&#10;        include:&#10;        -   php: '8.2'&#10;            latest: true&#10;"/>
+    <command>
+      <tool Name="actions/checkout@v3"/>
+    </command>
+    <command Name="Setup PHP" depends="//@job.0/@command.0">
+      <tool Name="shivammathur/setup-php@v2"/>
+      <parameter Parameter="php-version: ${{ matrix.php }}&#10;ini-values: memory_limit=-1&#10;coverage: pcov&#10;tools: composer, cs2pr, php-cs-fixer&#10;"/>
+    </command>
+    <command Name="Get Composer Cache Directory" depends="//@job.0/@command.1">
+      <tool Name="echo &quot;dir=$(composer config cache-files-dir)&quot; &gt;&gt; $GITHUB_OUTPUT"/>
+    </command>
+    <command depends="//@job.0/@command.2">
+      <tool Name="actions/cache@v3"/>
+      <parameter Parameter="path: ${{ steps.composer-cache.outputs.dir }}&#10;key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}&#10;restore-keys: ${{ runner.os }}-composer-&#10;"/>
+    </command>
+    <command Name="Install prerequisites" depends="//@job.0/@command.3">
+      <tool Name="wget -O box.phar https://github.com/humbug/box/releases/download/4.3.8/box.phar&#10;echo &quot;BOX_BIN=$(pwd)/box.phar&quot; &gt;&gt; $GITHUB_ENV&#10;sudo chown -R $(whoami):$(whoami) .&#10;"/>
+    </command>
+    <command Name="Run PHPUnit" depends="//@job.0/@ifthenelse.2/@true/@command.0">
+      <tool Name="vendor/bin/simple-phpunit ${{ matrix.latest &amp;&amp; '--coverage-clover build/logs/phpunit/clover.xml' || '' }}"/>
+    </command>
+    <ifthenelse Condition="matrix.latest">
+      <true>
+        <command Name="Install dependencies" depends="//@job.0/@command.4">
+          <tool Name="composer install --prefer-dist --no-interaction --no-progress --ansi"/>
+        </command>
+      </true>
+    </ifthenelse>
+    <ifthenelse Condition="!matrix.latest">
+      <true>
+        <command Name="Update dependencies" depends="//@job.0/@ifthenelse.0/@true/@command.0">
+          <tool Name="composer update --no-interaction --no-progress --ansi"/>
+        </command>
+      </true>
+    </ifthenelse>
+    <ifthenelse Condition="matrix.latest">
+      <true>
+        <command Name="Enable code coverage" depends="//@job.0/@ifthenelse.1/@true/@command.0">
+          <tool Name="echo &quot;COVERAGE=1&quot; &gt;&gt; $GITHUB_ENV"/>
+        </command>
+      </true>
+    </ifthenelse>
+    <ifthenelse Condition="matrix.latest">
+      <true>
+        <command Name="Run PHP CS Fixer" depends="//@job.0/@command.5">
+          <tool Name="php-cs-fixer fix --dry-run --format=checkstyle --ansi | cs2pr"/>
+        </command>
+      </true>
+    </ifthenelse>
+    <ifthenelse Condition="matrix.latest">
+      <true>
+        <command Name="Run PHPStan" depends="//@job.0/@ifthenelse.3/@true/@command.0">
+          <tool Name="vendor/bin/phpstan analyse --ansi"/>
+        </command>
+      </true>
+    </ifthenelse>
+    <ifthenelse Condition="matrix.latest">
+      <true>
+        <command Name="Run e2e tests" depends="//@job.0/@ifthenelse.4/@true/@command.0">
+          <tool Name="bin/compile"/>
+        </command>
+      </true>
+    </ifthenelse>
+    <ifthenelse Condition="matrix.latest">
+      <true>
+        <command Name="Upload coverage results to Coveralls" depends="//@job.0/@ifthenelse.5/@true/@command.0">
+          <tool Name="composer global require --prefer-dist --no-interaction --no-progress --ansi php-coveralls/php-coveralls&#10;export PATH=&quot;$PATH:$HOME/.composer/vendor/bin&quot;&#10;php-coveralls --coverage_clover=build/logs/phpunit/clover.xml -v&#10;"/>
+          <parameter Parameter="COVERALLS_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}&#10;"/>
+        </command>
+      </true>
+    </ifthenelse>
+  </job>
+</devops2:Pipeline>

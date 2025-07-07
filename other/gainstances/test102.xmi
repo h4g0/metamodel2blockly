@@ -1,0 +1,124 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="FunkyMenu" xmi:version="2.0">
+  <when Trigger="push:&#10;    branches:&#10;    - master&#10;"/>
+  <when Trigger="pull_request:&#10;    branches:&#10;    - master&#10;"/>
+  <when Trigger="workflow_dispatch: null&#10;"/>
+  <job Name="buildLinux">
+    <tool Name="ubuntu-latest"/>
+    <command>
+      <tool Name="actions/checkout@v2"/>
+    </command>
+    <command depends="//@job.0/@command.0">
+      <tool Name="krdlab/setup-haxe@master"/>
+      <parameter Parameter="haxe-version: 4.2.0&#10;"/>
+    </command>
+    <command Name="Install Haxelib" depends="//@job.0/@command.1">
+      <tool Name="haxelib setup ~/haxelib&#10;haxelib install hxcpp &gt; /dev/null&#10;haxelib install lime&#10;haxelib install openfl&#10;haxelib --never install flixel&#10;haxelib run lime setup flixel&#10;haxelib run lime setup&#10;haxelib install flixel-tools&#10;haxelib install flixel-ui&#10;haxelib install flixel-addons&#10;haxelib install tjson&#10;haxelib install hxjsonast&#10;haxelib install linc_luajit&#10;haxelib install hscript&#10;haxelib git hscript-ex https://github.com/ianharrigan/hscript-ex&#10;haxelib git discord_rpc https://github.com/Aidan63/linc_discord-rpc&#10;haxelib install hxcpp-debug-server&#10;haxelib list&#10;"/>
+    </command>
+    <command Name="Create Version Tag" depends="//@job.0/@command.2">
+      <tool Name="echo &quot;${{github.run_id}}&quot; &gt; VERSION"/>
+    </command>
+    <command Name="Compile" depends="//@job.0/@command.3">
+      <tool Name="haxelib run lime build Project.xml linux --app-version=&quot;4.0.0-${{ github.run_id}}&quot;"/>
+    </command>
+    <command Name="Publish Artifact" depends="//@job.0/@command.4">
+      <tool Name="actions/upload-artifact@v2"/>
+      <parameter Parameter="name: linuxBuild&#10;path: export/release/linux/bin&#10;"/>
+    </command>
+    <command Name="Copy Week 7 Files" depends="//@job.0/@command.5">
+      <tool Name="cp -rf ./Week7Assets/* ./export/release/linux/bin/assets"/>
+    </command>
+    <command Name="Publish Artifact" depends="//@job.0/@command.6">
+      <tool Name="actions/upload-artifact@v2"/>
+      <parameter Parameter="name: linuxWeek7Build&#10;path: export/release/linux/bin&#10;"/>
+    </command>
+    <command Name="Compile HTML5" depends="//@job.0/@command.7">
+      <tool Name="haxelib run lime build Project.xml html5"/>
+    </command>
+    <command Name="Publish Html5" depends="//@job.0/@command.8">
+      <tool Name="actions/upload-artifact@v2"/>
+      <parameter Parameter="name: html5Build&#10;path: export/release/html5/bin&#10;"/>
+    </command>
+    <command Name="Copy Week 7 Files" depends="//@job.0/@command.9">
+      <tool Name="cp -rf ./Week7Assets/* ./export/release/html5/bin/assets"/>
+    </command>
+    <command Name="Publish Artifact" depends="//@job.0/@command.10">
+      <tool Name="actions/upload-artifact@v2"/>
+      <parameter Parameter="name: html5Week7Build&#10;path: export/release/html5/bin&#10;"/>
+    </command>
+  </job>
+  <job Name="buildWindows">
+    <tool Name="windows-latest"/>
+    <command>
+      <tool Name="actions/checkout@v2"/>
+    </command>
+    <command depends="//@job.1/@command.0">
+      <tool Name="krdlab/setup-haxe@master"/>
+      <parameter Parameter="haxe-version: 4.2.0&#10;"/>
+    </command>
+    <command Name="Install Haxelib" depends="//@job.1/@command.1">
+      <tool Name="haxelib setup C:/haxelib&#10;haxelib install hxcpp &gt; nul&#10;haxelib install lime&#10;haxelib install openfl&#10;haxelib --never install flixel&#10;haxelib run lime setup flixel&#10;haxelib run lime setup&#10;haxelib install flixel-tools&#10;haxelib install flixel-ui&#10;haxelib install flixel-addons&#10;haxelib install tjson&#10;haxelib install hxjsonast&#10;haxelib install linc_luajit&#10;haxelib install hscript&#10;haxelib git hscript-ex https://github.com/ianharrigan/hscript-ex&#10;haxelib git discord_rpc https://github.com/Aidan63/linc_discord-rpc&#10;haxelib install hxcpp-debug-server&#10;haxelib list&#10;"/>
+    </command>
+    <command Name="Create Version Tag" depends="//@job.1/@command.2">
+      <tool Name="echo &quot;${{github.run_id}}&quot; &gt; VERSION"/>
+    </command>
+    <command Name="Compile" depends="//@job.1/@command.3">
+      <tool Name="haxelib run lime build windows --app-version=&quot;4.0.0-${{ github.run_id}}&quot;"/>
+    </command>
+    <command Name="Publish Artifact" depends="//@job.1/@command.4">
+      <tool Name="actions/upload-artifact@v2"/>
+      <parameter Parameter="name: windowsBuild&#10;path: export/release/windows/bin&#10;"/>
+    </command>
+    <command Name="Copy Week 7 Files" depends="//@job.1/@command.5">
+      <tool Name="Copy-Item -Force -Recurse ./Week7Assets/* -Destination ./export/release/windows/bin/assets"/>
+    </command>
+    <command Name="Publish Artifact" depends="//@job.1/@command.6">
+      <tool Name="actions/upload-artifact@v2"/>
+      <parameter Parameter="name: windowsWeek7Build&#10;path: export/release/windows/bin&#10;"/>
+    </command>
+    <command Name="Compile 32 bit" depends="//@job.1/@command.7">
+      <tool Name="haxelib run lime build windows -D32bit -32"/>
+    </command>
+    <command Name="Publish 32bit" depends="//@job.1/@command.8">
+      <tool Name="actions/upload-artifact@v2"/>
+      <parameter Parameter="name: windows32Build&#10;path: export/32bit/windows/bin&#10;"/>
+    </command>
+    <command Name="Copy Week 7 Files" depends="//@job.1/@command.9">
+      <tool Name="Copy-Item -Force -Recurse ./Week7Assets/* -Destination ./export/32bit/windows/bin/assets"/>
+    </command>
+    <command Name="Publish Artifact" depends="//@job.1/@command.10">
+      <tool Name="actions/upload-artifact@v2"/>
+      <parameter Parameter="name: windowsWeek732bitBuild&#10;path: export/32bit/windows/bin&#10;"/>
+    </command>
+  </job>
+  <job Name="buildMac">
+    <tool Name="macos-latest"/>
+    <command>
+      <tool Name="actions/checkout@v2"/>
+    </command>
+    <command depends="//@job.2/@command.0">
+      <tool Name="krdlab/setup-haxe@master"/>
+      <parameter Parameter="haxe-version: 4.2.0&#10;"/>
+    </command>
+    <command Name="Install Haxelib" depends="//@job.2/@command.1">
+      <tool Name="haxelib setup ~/haxelib&#10;haxelib install hxcpp &gt; /dev/null&#10;haxelib install lime&#10;haxelib install openfl&#10;haxelib install flixel&#10;haxelib run lime setup flixel&#10;haxelib run lime setup&#10;haxelib install flixel-tools&#10;haxelib install flixel-ui&#10;haxelib install flixel-addons&#10;haxelib install tjson&#10;haxelib install hxjsonast&#10;haxelib install linc_luajit&#10;haxelib install hscript&#10;haxelib git hscript-ex https://github.com/ianharrigan/hscript-ex&#10;haxelib git discord_rpc https://github.com/Aidan63/linc_discord-rpc&#10;haxelib install hxcpp-debug-server&#10;haxelib list&#10;"/>
+    </command>
+    <command Name="Create Version Tag" depends="//@job.2/@command.2">
+      <tool Name="echo &quot;${{github.run_id}}&quot; &gt; VERSION"/>
+    </command>
+    <command Name="Compile" depends="//@job.2/@command.3">
+      <tool Name="haxelib run lime build mac --app-version=&quot;4.0.0-${{ github.run_id}}&quot;"/>
+    </command>
+    <command Name="Publish Artifact" depends="//@job.2/@command.4">
+      <tool Name="actions/upload-artifact@v2"/>
+      <parameter Parameter="name: macBuild&#10;path: export/release/macos/bin&#10;"/>
+    </command>
+    <command Name="Copy Week 7 Files" depends="//@job.2/@command.5">
+      <tool Name="cp -rf ./Week7Assets ./export/release/macos/bin/assets"/>
+    </command>
+    <command Name="Publish Artifact" depends="//@job.2/@command.6">
+      <tool Name="actions/upload-artifact@v2"/>
+      <parameter Parameter="name: macWeek7Build&#10;path: export/release/macos/bin&#10;"/>
+    </command>
+  </job>
+</devops2:Pipeline>

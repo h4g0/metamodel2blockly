@@ -1,0 +1,18 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="Fix PHP code style issues" xmi:version="2.0">
+  <when Trigger="push:&#10;    paths:&#10;    - '**.php'&#10;"/>
+  <job Name="php-code-styling">
+    <tool Name="ubuntu-latest"/>
+    <command Name="Checkout code">
+      <tool Name="actions/checkout@v3"/>
+      <parameter Parameter="ref: ${{ github.head_ref }}&#10;"/>
+    </command>
+    <command Name="Fix PHP code style issues" depends="//@job.0/@command.0">
+      <tool Name="aglipanci/laravel-pint-action@2.1.0"/>
+    </command>
+    <command Name="Commit changes" depends="//@job.0/@command.1">
+      <tool Name="stefanzweifel/git-auto-commit-action@v4"/>
+      <parameter Parameter="commit_message: Fix styling&#10;"/>
+    </command>
+  </job>
+</devops2:Pipeline>

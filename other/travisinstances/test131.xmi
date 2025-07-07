@@ -1,0 +1,13 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="" xmi:version="2.0">
+  <tool Name="language: python&#10;"/>
+  <tool Name="python: 3.6&#10;"/>
+  <job Name="env">
+    <command Name="">
+      <tool Name="TOXENV=py36"/>
+    </command>
+  </job>
+  <job Name="install"/>
+  <job Name="script"/>
+  <environment Key="TOXENV=py36" Value="TOXENV=py36"/>
+</devops2:Pipeline>

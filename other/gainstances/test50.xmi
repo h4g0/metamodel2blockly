@@ -1,0 +1,61 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="Build" xmi:version="2.0">
+  <when Trigger="push:&#10;    branches:&#10;    - master&#10;"/>
+  <when Trigger="pull_request:&#10;    branches:&#10;    - master&#10;"/>
+  <job Name="build">
+    <tool Name="ubuntu-latest"/>
+    <command>
+      <tool Name="actions/cache@v3"/>
+      <parameter Parameter="path: /opt/toolchains&#10;key: chilly-willy-devkit-4&#10;"/>
+    </command>
+    <command Name="Install libdebuginfod1" depends="//@job.0/@command.0">
+      <tool Name="sudo apt install -y libdebuginfod1"/>
+    </command>
+    <command depends="//@job.0/@ifthenelse.1/@true/@command.0">
+      <tool Name="actions/checkout@v2"/>
+    </command>
+    <command Name="make debug MARS" depends="//@job.0/@command.2">
+      <tool Name="dd if=/dev/zero bs=1K count=2324 of=doom32x.wad &amp;&amp; \&#10;make clean &amp;&amp; make -j debug&#10;"/>
+    </command>
+    <command Name="make MARS" depends="//@job.0/@command.3">
+      <tool Name="dd if=/dev/zero bs=1K count=2324 of=doom32x.wad &amp;&amp; \&#10;make clean &amp;&amp; make -j release&#10;"/>
+    </command>
+    <command Name="readelf -S" depends="//@job.0/@command.4">
+      <tool Name="/opt/toolchains/sega/sh-elf/bin/sh-elf-readelf -S D32XR.elf&#10;"/>
+    </command>
+    <command Name="Print sizes" depends="//@job.0/@command.5">
+      <tool Name="/opt/toolchains/sega/sh-elf/bin/sh-elf-gcc-nm --numeric-sort --radix=d D32XR.elf | egrep -Ei ' (B|D|T) ' | grep -v __data_start &gt;syms &amp;&amp; \&#10;tail +2 syms | awk '{print $1}' &gt;syms2 &amp;&amp; \&#10;paste -d &quot; &quot; syms syms2 | awk '{ $5 = $4 - $1 } 1' | awk '{ printf &quot;%i %i %s\n&quot;, $1,$5,$3 }' &gt;calc_size&#10;/opt/toolchains/sega/sh-elf/bin/sh-elf-gcc-nm --print-size --size-sort --radix=d D32XR.elf &gt;nm_size&#10;awk 'NR==FNR { map[$1]=$2;next } { print match(map[$1], /[^ ]/) ? $1&quot; &quot;map[$1]&quot; &quot;$3 : $1&quot; &quot;$2&quot; &quot;$3 } ' nm_size calc_size | \&#10;grep '^100' | awk '{ printf &quot;%08x %08i %s\n&quot;, $1,$2,$3 }' | sort -n -k 2,2 | tail -n 75&#10;rm syms syms2 calc_size nm_size&#10;"/>
+    </command>
+    <command Name=".bss plus .data size" depends="//@job.0/@command.6">
+      <tool Name="/opt/toolchains/sega/sh-elf/bin/sh-elf-readelf -S D32XR.elf | \&#10;awk '{ if ($9 == &quot;WA&quot;) { print 0&quot;x&quot;$7 } }' | \&#10;xargs printf &quot;%d\n&quot; | \&#10;awk '{s+=$1} END {print s}'&#10;"/>
+    </command>
+    <command Name="bss_end" depends="//@job.0/@command.7">
+      <tool Name="grep 'bss_end =' output.map"/>
+    </command>
+    <command Name="Test bss_end &lt; 0x603BC00" depends="//@job.0/@command.8">
+      <tool Name="grep 'bss_end =' output.map | grep -o '0x[0-9a-f]\+' | \&#10;xargs -I{} echo &quot;{} 0x603BC00&quot; | awk --non-decimal-data '{print($2-$1); exit($1&gt;=$2)}'&#10;"/>
+    </command>
+    <command Name="32X ROM" depends="//@job.0/@command.9">
+      <tool Name="actions/upload-artifact@v2"/>
+      <parameter Parameter="name: 32X ROM File&#10;path: 'D32XR.32x&#10;&#10;    '&#10;"/>
+    </command>
+    <command Name="temp.bin" depends="//@job.0/@command.10">
+      <tool Name="actions/upload-artifact@v2"/>
+      <parameter Parameter="name: temp.bin&#10;path: 'temp.bin&#10;&#10;    '&#10;"/>
+    </command>
+    <ifthenelse Condition="steps.devkit-cache.outputs.cache-hit != 'true'">
+      <true>
+        <command Name="Download The devkit archive" depends="//@job.0/@command.1">
+          <tool Name="curl -sL --fail \&#10;-H &quot;Accept: application/vnd.github.v3+json&quot; \&#10;&quot;https://api.github.com/repos/viciious/32XDK/releases/tags/20220418&quot; \&#10;| jq -r &quot;.assets | .[] | select(.name | test(\&quot;chillys-sega-devkit-20220418-opt.tar.zst$\&quot;)) | .url&quot; \&#10;| xargs curl -sL --fail -H &quot;Accept: application/octet-stream&quot; -o &quot;chillys-sega-devkit-20220418-opt.tar.zst&quot;&#10;"/>
+        </command>
+      </true>
+    </ifthenelse>
+    <ifthenelse Condition="steps.devkit-cache.outputs.cache-hit != 'true'">
+      <true>
+        <command Name="Unpack the devkit archive" depends="//@job.0/@ifthenelse.0/@true/@command.0">
+          <tool Name="ls -la ./chillys-sega-devkit-20220418-opt.tar.zst &amp;&amp; \&#10;zstdcat ./chillys-sega-devkit-20220418-opt.tar.zst | sudo tar -C / -xa&#10;"/>
+        </command>
+      </true>
+    </ifthenelse>
+  </job>
+</devops2:Pipeline>

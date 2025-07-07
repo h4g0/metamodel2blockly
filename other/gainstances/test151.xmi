@@ -1,0 +1,34 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="Build and publish package" xmi:version="2.0">
+  <when Trigger="push:&#10;    tags:&#10;    - '*.*.*'&#10;"/>
+  <job Name="build">
+    <tool Name="ubuntu-latest"/>
+    <command Name="Checkout repository">
+      <tool Name="actions/checkout@master"/>
+    </command>
+    <command Name="Set release env" depends="//@job.0/@command.0">
+      <tool Name="major_version=${GITHUB_REF:10:1} \&#10;&amp;&amp; echo &quot;MAJOR_VERSION=${major_version}&quot; &gt;&gt; $GITHUB_ENV \&#10;&amp;&amp; [[ $major_version = 5 ]] &amp;&amp; echo &quot;PROJECT_TARGET=netstandard2.1&quot; &gt;&gt; $GITHUB_ENV || [[ $major_version = 6 ]] &amp;&amp; echo &quot;PROJECT_TARGET=net6.0&quot; &gt;&gt; $GITHUB_ENV || echo &quot;PROJECT_TARGET=net8.0&quot; &gt;&gt; $GITHUB_ENV \&#10;&amp;&amp; echo &quot;RELEASE_VERSION=${GITHUB_REF#refs/*/}&quot; &gt;&gt; $GITHUB_ENV&#10;"/>
+    </command>
+    <command Name="Setup .NET5 environment" depends="//@job.0/@command.1">
+      <tool Name="actions/setup-dotnet@v1"/>
+      <parameter Parameter="dotnet-version: 5.x.x&#10;"/>
+    </command>
+    <command Name="Setup .NET6 environment" depends="//@job.0/@command.2">
+      <tool Name="actions/setup-dotnet@v1"/>
+      <parameter Parameter="dotnet-version: 6.x.x&#10;"/>
+    </command>
+    <command Name="Setup .NET8 environment" depends="//@job.0/@command.3">
+      <tool Name="actions/setup-dotnet@v1"/>
+      <parameter Parameter="dotnet-version: 8.x.x&#10;"/>
+    </command>
+    <command Name="Build project" depends="//@job.0/@command.4">
+      <tool Name="for p in $(find ./src -name *.csproj); do dotnet build $p --framework ${{env.PROJECT_TARGET}} --configuration Release; done&#10;"/>
+    </command>
+    <command Name="Generate a NuGet package" depends="//@job.0/@command.5">
+      <tool Name="dotnet pack -p:TargetFrameworks=${{env.PROJECT_TARGET}} -p:PackageVersion=${{env.RELEASE_VERSION}} --no-build -c Release -o ."/>
+    </command>
+    <command Name="Push to GitHub package registry" depends="//@job.0/@command.6">
+      <tool Name="dotnet nuget push &quot;*.nupkg&quot; -k ${{secrets.NUGETORGTOKEN}} -s https://api.nuget.org/v3/index.json --skip-duplicate"/>
+    </command>
+  </job>
+</devops2:Pipeline>

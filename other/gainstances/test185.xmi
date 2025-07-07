@@ -1,0 +1,114 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="Build and Deploy" xmi:version="2.0">
+  <when Trigger="workflow_dispatch: null&#10;"/>
+  <when Trigger="schedule:&#10;-   cron: 17 8 * * *&#10;"/>
+  <job Name="js">
+    <tool Name="ubuntu-22.04"/>
+    <command>
+      <tool Name="actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac"/>
+    </command>
+    <command depends="//@job.0/@command.0">
+      <tool Name="actions/setup-node@5e21ff4d9bc1a8cf6de233a3057d20ec6b3fb69d"/>
+      <parameter Parameter="node-version-file: .node-version&#10;cache: npm&#10;"/>
+    </command>
+    <command depends="//@job.0/@command.1">
+      <tool Name="npm ci"/>
+    </command>
+    <command depends="//@job.0/@command.2">
+      <tool Name="npm run validate-data"/>
+    </command>
+    <command depends="//@job.0/@command.3">
+      <tool Name="npm run bundle-data"/>
+    </command>
+    <command depends="//@job.0/@command.4">
+      <tool Name="npm run pretty --no-write --list-different"/>
+    </command>
+    <command depends="//@job.0/@command.5">
+      <tool Name="npx tsc"/>
+    </command>
+    <command depends="//@job.0/@command.6">
+      <tool Name="npm run lint"/>
+    </command>
+    <command Name="Run tests" depends="//@job.0/@command.7">
+      <tool Name="npm run test -- --coverage"/>
+    </command>
+    <command Name="Upload coverage" depends="//@job.0/@command.8">
+      <tool Name="bash &lt;(curl -s https://codecov.io/bash)"/>
+      <parameter Parameter="CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}&#10;"/>
+    </command>
+  </job>
+  <job Name="android">
+    <tool Name="ubuntu-22.04"/>
+    <command>
+      <tool Name="actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac"/>
+    </command>
+    <command depends="//@job.1/@command.0">
+      <tool Name="actions/setup-node@5e21ff4d9bc1a8cf6de233a3057d20ec6b3fb69d"/>
+      <parameter Parameter="node-version-file: .node-version&#10;cache: npm&#10;"/>
+    </command>
+    <command depends="//@job.1/@command.1">
+      <tool Name="ruby/setup-ruby@v1"/>
+      <parameter Parameter="ruby-version: '3.0'&#10;bundler-cache: true&#10;"/>
+    </command>
+    <command Name="Restore Gradle cache" depends="//@job.1/@command.2">
+      <tool Name="actions/cache@88522ab9f39a2ea568f7027eddc7d8d8bc9d59c8"/>
+      <parameter Parameter="path: '~/.gradle/caches&#10;&#10;    ~/.gradle/wrapper&#10;&#10;    '&#10;key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties')&#10;    }}&#10;restore-keys: '${{ runner.os }}-gradle-&#10;&#10;    '&#10;"/>
+    </command>
+    <command depends="//@job.1/@command.3">
+      <tool Name="npm ci"/>
+    </command>
+    <command Name="Raise the fs.inotify ulimits to 524288 watches/queued events/user instances" depends="//@job.1/@command.4">
+      <tool Name="echo 524288 | sudo tee -a /proc/sys/fs/inotify/max_user_watches&#10;echo 524288 | sudo tee -a /proc/sys/fs/inotify/max_queued_events&#10;echo 524288 | sudo tee -a /proc/sys/fs/inotify/max_user_instances&#10;sudo sysctl -p&#10;"/>
+    </command>
+    <command depends="//@job.1/@command.5">
+      <tool Name="echo 'org.gradle.workers.max=2' &gt;&gt; ./android/gradle.properties"/>
+    </command>
+    <command depends="//@job.1/@command.6">
+      <tool Name="cd android &amp;&amp; ./gradlew androidDependencies --console=plain"/>
+    </command>
+    <command depends="//@job.1/@command.7">
+      <tool Name="npm run bundle-data"/>
+    </command>
+    <command depends="//@job.1/@command.8">
+      <tool Name="bundle exec fastlane android ci-run"/>
+      <parameter Parameter="FASTLANE_PASSWORD: ${{ secrets.FASTLANE_PASSWORD }}&#10;MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}&#10;GIT_COMMIT_DESC: $(git log --format=oneline -n 1 $GITHUB_SHA)&#10;FASTLANE_SKIP_UPDATE_CHECK: '1'&#10;FASTLANE_DISABLE_ANIMATION: '1'&#10;SENTRY_ORG: frog-pond-labs&#10;SENTRY_PROJECT: all-about-olaf&#10;SENTRY_AUTH_TOKEN: ${{ secrets.HOSTED_SENTRY_AUTH_TOKEN }}&#10;GITHUB_KEYS_REPOSITORY_TOKEN: ${{ secrets.GITHUB_KEYS_REPOSITORY_TOKEN }}&#10;"/>
+    </command>
+  </job>
+  <job Name="ios">
+    <tool Name="macos-12"/>
+    <command>
+      <tool Name="actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac"/>
+    </command>
+    <command depends="//@job.2/@command.0">
+      <tool Name="actions/setup-node@5e21ff4d9bc1a8cf6de233a3057d20ec6b3fb69d"/>
+      <parameter Parameter="node-version-file: .node-version&#10;cache: npm&#10;"/>
+    </command>
+    <command depends="//@job.2/@command.1">
+      <tool Name="ruby/setup-ruby@v1"/>
+      <parameter Parameter="ruby-version: '3.0'&#10;bundler-cache: true&#10;"/>
+    </command>
+    <command depends="//@job.2/@command.2">
+      <tool Name="sudo xcode-select -s /Applications/Xcode_14.2.app"/>
+    </command>
+    <command depends="//@job.2/@command.3">
+      <tool Name="git fetch --prune --unshallow"/>
+    </command>
+    <command depends="//@job.2/@command.4">
+      <tool Name="npm ci"/>
+      <parameter Parameter="SKIP_POSTINSTALL: '1'&#10;"/>
+    </command>
+    <command depends="//@job.2/@command.5">
+      <tool Name="bundle exec pod install --deployment"/>
+    </command>
+    <command depends="//@job.2/@command.6">
+      <tool Name="brew tap wix/brew"/>
+    </command>
+    <command depends="//@job.2/@command.7">
+      <tool Name="brew install applesimutils"/>
+    </command>
+    <command depends="//@job.2/@command.8">
+      <tool Name="bundle exec fastlane ios ci-run"/>
+      <parameter Parameter="FASTLANE_PASSWORD: ${{ secrets.FASTLANE_PASSWORD }}&#10;MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}&#10;GIT_COMMIT_DESC: $(git log --format=oneline -n 1 $GITHUB_SHA)&#10;FASTLANE_SKIP_UPDATE_CHECK: '1'&#10;FASTLANE_DISABLE_ANIMATION: '1'&#10;SENTRY_ORG: frog-pond-labs&#10;SENTRY_PROJECT: all-about-olaf&#10;SENTRY_AUTH_TOKEN: ${{ secrets.HOSTED_SENTRY_AUTH_TOKEN }}&#10;GITHUB_KEYS_REPOSITORY_TOKEN: ${{ secrets.GITHUB_KEYS_REPOSITORY_TOKEN }}&#10;"/>
+    </command>
+  </job>
+</devops2:Pipeline>

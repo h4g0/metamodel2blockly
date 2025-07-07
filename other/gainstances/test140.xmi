@@ -1,0 +1,34 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="Create Docker Images" xmi:version="2.0">
+  <when Trigger="push:&#10;    branches:&#10;    - master&#10;"/>
+  <job Name="build">
+    <environment Key="NODE_LATEST" Value="16"/>
+    <tool Name="ubuntu-latest"/>
+    <tool Name="strategy:&#10;    matrix:&#10;        node:&#10;        - 14&#10;        - 16&#10;        - 18&#10;        suffix:&#10;        - ''&#10;"/>
+    <command Name="1-checkout">
+      <tool Name="actions/checkout@v3"/>
+      <parameter Parameter="fetch-depth: 0&#10;"/>
+    </command>
+    <command Name="2-setup-image-setting" depends="//@job.0/@command.0">
+      <tool Name="SUFFIX=&quot;&quot;&#10;if [ &quot;${{ matrix.suffix }}&quot; != &quot;&quot; ]; then&#10;  SUFFIX=&quot;-${{ matrix.suffix}}&quot;&#10;fi&#10;&#10;TAGS=&quot;ghcr.io/${{ github.repository }}:${{ matrix.node }}$SUFFIX&quot;&#10;if [ &quot;${{ matrix.node }}&quot; == &quot;${{ env.NODE_LATEST }}&quot; ]; then&#10;  TAGS=&quot;$TAGS,ghcr.io/${{ github.repository }}:latest$SUFFIX&quot;&#10;fi&#10;&#10;echo &quot;current tags $TAGS&quot;&#10;echo &quot;TAGS=$TAGS&quot; &gt;&gt; $GITHUB_ENV&#10;"/>
+    </command>
+    <command Name="3-setup-tags-toLowerCase" depends="//@job.0/@command.1">
+      <tool Name="actions/github-script@v6"/>
+      <parameter Parameter="script: return `${process.env.TAGS.toLowerCase()}`&#10;result-encoding: string&#10;"/>
+    </command>
+    <command Name="4-setup-qemu-action" depends="//@job.0/@command.2">
+      <tool Name="docker/setup-qemu-action@v2"/>
+    </command>
+    <command Name="5-login-action" depends="//@job.0/@command.3">
+      <tool Name="docker/login-action@v2"/>
+      <parameter Parameter="registry: ghcr.io&#10;username: ${{ github.repository_owner }}&#10;password: ${{ secrets.GITHUB_TOKEN }}&#10;"/>
+    </command>
+    <command Name="6-setup-buildx-action" depends="//@job.0/@command.4">
+      <tool Name="docker/setup-buildx-action@v2"/>
+    </command>
+    <command Name="7-build-push-action" depends="//@job.0/@command.5">
+      <tool Name="docker/build-push-action@v3"/>
+      <parameter Parameter="context: ./&#10;file: ./Dockerfile&#10;platforms: linux/amd64, linux/arm64, linux/arm/v7, linux/arm/v6&#10;push: true&#10;build-args: 'NODE_VERSION=${{ matrix.node }}&#10;&#10;    '&#10;tags: '${{ steps.tags-tolowercase.outputs.result }}&#10;&#10;    '&#10;"/>
+    </command>
+  </job>
+</devops2:Pipeline>

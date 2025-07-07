@@ -1,0 +1,62 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="R-CMD-check" xmi:version="2.0">
+  <when Trigger="push:&#10;    branches:&#10;    - main&#10;"/>
+  <when Trigger="pull_request:&#10;    branches:&#10;    - '*'&#10;    - '!gh-pages'&#10;"/>
+  <job Name="R-CMD-check">
+    <environment Key="R_REMOTES_NO_ERRORS_FROM_WARNINGS" Value="True"/>
+    <environment Key="RSPM" Value="${{ matrix.config.rspm }}"/>
+    <environment Key="GITHUB_PAT" Value="${{ secrets.GITHUB_TOKEN }}"/>
+    <tool Name="${{ matrix.config.os }}"/>
+    <tool Name="strategy:&#10;    fail-fast: false&#10;    matrix:&#10;        config:&#10;        -   os: ubuntu-20.04&#10;            r: oldrel&#10;            rspm: https://packagemanager.rstudio.com/cran/__linux__/focal/latest&#10;        -   os: ubuntu-20.04&#10;            r: release&#10;            rspm: https://packagemanager.rstudio.com/cran/__linux__/focal/latest&#10;        -   os: ubuntu-20.04&#10;            r: devel&#10;            rspm: https://packagemanager.rstudio.com/cran/__linux__/focal/latest&#10;        -   os: windows-latest&#10;            r: release&#10;        -   os: macOS-latest&#10;            r: release&#10;"/>
+    <command>
+      <tool Name="actions/checkout@v2"/>
+    </command>
+    <command depends="//@job.0/@command.0">
+      <tool Name="r-lib/actions/setup-r@v1"/>
+      <parameter Parameter="r-version: ${{ matrix.config.r }}&#10;"/>
+    </command>
+    <command depends="//@job.0/@command.1">
+      <tool Name="r-lib/actions/setup-pandoc@v1"/>
+    </command>
+    <command Name="Query dependencies" depends="//@job.0/@command.2">
+      <tool Name="install.packages('remotes')&#10;saveRDS(remotes::dev_package_deps(dependencies = TRUE), &quot;.github/depends.Rds&quot;, version = 2)&#10;writeLines(sprintf(&quot;R-%i.%i&quot;, getRversion()$major, getRversion()$minor), &quot;.github/R-version&quot;)&#10;"/>
+    </command>
+    <command Name="Install dependencies" depends="//@job.0/@ifthenelse.2/@true/@command.0">
+      <tool Name="remotes::install_github(&quot;mikemahoney218/unifir&quot;)&#10;remotes::install_deps(dependencies = TRUE)&#10;remotes::install_cran(&quot;rcmdcheck&quot;)&#10;"/>
+    </command>
+    <command Name="Check" depends="//@job.0/@command.4">
+      <tool Name="rcmdcheck::rcmdcheck(args = c(&quot;--no-manual&quot;, &quot;--as-cran&quot;), error_on = &quot;warning&quot;, check_dir = &quot;check&quot;)"/>
+      <parameter Parameter="_R_CHECK_CRAN_INCOMING_REMOTE_: false&#10;"/>
+    </command>
+    <ifthenelse Condition="runner.os != 'Windows'">
+      <true>
+        <command Name="Cache R packages" depends="//@job.0/@command.3">
+          <tool Name="actions/cache@v2"/>
+          <parameter Parameter="path: ${{ env.R_LIBS_USER }}&#10;key: ${{ runner.os }}-${{ hashFiles('.github/R-version') }}-1-${{ hashFiles('.github/depends.Rds')&#10;    }}&#10;restore-keys: ${{ runner.os }}-${{ hashFiles('.github/R-version') }}-1-&#10;"/>
+        </command>
+      </true>
+    </ifthenelse>
+    <ifthenelse Condition="runner.os == 'Linux'">
+      <true>
+        <command Name="Install Linux dependencies" depends="//@job.0/@ifthenelse.0/@true/@command.0">
+          <tool Name="while read -r cmd&#10;do&#10;  eval sudo $cmd&#10;done &lt; &lt;(Rscript -e 'writeLines(remotes::system_requirements(&quot;ubuntu&quot;, &quot;20.04&quot;))')&#10;"/>
+        </command>
+      </true>
+    </ifthenelse>
+    <ifthenelse Condition="runner.os == 'macOS'">
+      <true>
+        <command Name="Install macOS dependencies" depends="//@job.0/@ifthenelse.1/@true/@command.0">
+          <tool Name="brew install proj&#10;brew install gdal&#10;"/>
+        </command>
+      </true>
+    </ifthenelse>
+    <ifthenelse Condition="failure()">
+      <true>
+        <command Name="Upload check results" depends="//@job.0/@command.5">
+          <tool Name="actions/upload-artifact@main"/>
+          <parameter Parameter="name: ${{ runner.os }}-r${{ matrix.config.r }}-results&#10;path: check&#10;"/>
+        </command>
+      </true>
+    </ifthenelse>
+  </job>
+</devops2:Pipeline>

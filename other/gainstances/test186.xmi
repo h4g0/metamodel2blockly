@@ -1,0 +1,21 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="Build and deploy pytgcalls documentation to GitHub Pages" xmi:version="2.0">
+  <when Trigger="push:&#10;    branches:&#10;    - main&#10;    paths:&#10;    - .github/workflows/build_and_deploy_pytgcalls_documentation.yaml&#10;    - pytgcalls/**&#10;"/>
+  <job Name="build_and_deploy">
+    <tool Name="ubuntu-latest"/>
+    <command Name="Check out the repo">
+      <tool Name="actions/checkout@v2"/>
+    </command>
+    <command depends="//@job.0/@command.0">
+      <tool Name="actions/setup-python@v2"/>
+      <parameter Parameter="python-version: '3.6'&#10;architecture: x64&#10;"/>
+    </command>
+    <command Name="Install and Build" depends="//@job.0/@command.1">
+      <tool Name="python -m pip install --upgrade pip&#10;pip install tgcalls pdoc3 pyrogram telethon&#10;pdoc pytgcalls/pytgcalls --html --force --template-dir pytgcalls/pdoc&#10;mv html/pytgcalls/* html&#10;"/>
+    </command>
+    <command Name="Deploy" depends="//@job.0/@command.2">
+      <tool Name="JamesIves/github-pages-deploy-action@4.1.0"/>
+      <parameter Parameter="branch: gh-pages&#10;folder: html&#10;"/>
+    </command>
+  </job>
+</devops2:Pipeline>

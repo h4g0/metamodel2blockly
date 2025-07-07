@@ -1,0 +1,53 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="" xmi:version="2.0">
+  <tool Name="sudo: false&#10;"/>
+  <tool Name="notifications:&#10;    email: false&#10;"/>
+  <tool Name="cache:&#10;    directories:&#10;    - $HOME/.gradle/caches/&#10;    - $HOME/.gradle/wrapper/&#10;    - $HOME/.android&#10;    - $HOME/.nvm&#10;"/>
+  <tool Name="matrix:&#10;    include:&#10;    -   os: linux&#10;        env: CORDOVA_PLATFORM=&quot;browser&quot;&#10;        language: node_js&#10;        node_js: ${NODE_VERSION}&#10;    -   if: branch = master&#10;        os: osx&#10;        env: CORDOVA_PLATFORM=&quot;ios&quot;&#10;        language: objective-c&#10;        cache:&#10;        - bundler&#10;        - cocoapods&#10;        node_js: ${NODE_VERSION}&#10;        osx_image: xcode9.4&#10;        before_script:&#10;        - exist=$(which ios-deploy); if [[ -z &quot;${exist}&quot; ]]; then npm -g install ios-deploy&#10;            &gt; /dev/null; fi&#10;    -   if: branch = master&#10;        env: CORDOVA_PLATFORM=&quot;android&quot;&#10;        os: linux&#10;        node_js: ${NODE_VERSION}&#10;        language: android&#10;        jdk: oraclejdk8&#10;        android:&#10;            components:&#10;            - tools&#10;            - android-${ANDROID_API}&#10;            - platform-tools&#10;            - build-tools-${ANDROID_BUILD_TOOLS}&#10;            - android-${ANDROID_API}&#10;            - extra-android-m2repository&#10;            - extra-google-m2repository&#10;            - sys-img-x86-android-${ANDROID_API}&#10;            licenses:&#10;            - android-sdk-license-.+&#10;            - .+&#10;"/>
+  <job Name="env">
+    <command Name="">
+      <tool Name="global"/>
+      <parameter Parameter="- NODE_VERSION=&quot;10.12.0&quot;&#10;- ANDROID_API=&quot;28&quot;&#10;- ANDROID_BUILD_TOOLS=&quot;28.0.3&quot;&#10;- CORDOVA_VERSION=&quot;9.0.0&quot;&#10;"/>
+    </command>
+  </job>
+  <job Name="before_cache">
+    <command Name="">
+      <tool Name="rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock"/>
+    </command>
+    <command Name="" depends="//@job.1/@command.0">
+      <tool Name="rm -fr $HOME/.gradle/caches/*/plugin-resolution/"/>
+    </command>
+  </job>
+  <job Name="install">
+    <command Name="">
+      <tool Name="exist=$(which nvm); if [[ -z &quot;${exist}&quot; ]]; then rm -rf ~/.nvm &gt; /dev/null; git clone https://github.com/creationix/nvm.git ~/.nvm &gt; /dev/null; (cd ~/.nvm &amp;&amp; git checkout `git describe --abbrev=0 --tags` &gt; /dev/null); source ~/.nvm/nvm.sh &amp;&amp; nvm &gt; /dev/null; fi"/>
+    </command>
+    <command Name="" depends="//@job.2/@command.0">
+      <tool Name="exist=$(nvm list | grep ${NODE_VERSION}); if [[ -z &quot;${exist}&quot; ]]; then nvm install ${NODE_VERSION} &gt; /dev/null; fi"/>
+    </command>
+    <command Name="" depends="//@job.2/@command.1">
+      <tool Name="nvm use ${NODE_VERSION} &gt; /dev/null;"/>
+    </command>
+    <command Name="" depends="//@job.2/@command.2">
+      <tool Name="node --version"/>
+    </command>
+    <command Name="" depends="//@job.2/@command.3">
+      <tool Name="exist=$(which cordova); if [[ -z &quot;${exist}&quot; ]]; then npm -g install cordova@${CORDOVA_VERSION} &gt; /dev/null; fi"/>
+    </command>
+    <command Name="" depends="//@job.2/@command.4">
+      <tool Name="cordova --version"/>
+    </command>
+    <command Name="" depends="//@job.2/@command.5">
+      <tool Name="exist=$(which cordova-paramedic); if [[ -z &quot;${exist}&quot; ]]; then npm -g install https://github.com/apache/cordova-paramedic; fi"/>
+    </command>
+    <command Name="" depends="//@job.2/@command.6">
+      <tool Name="npm i &gt; /dev/null"/>
+    </command>
+  </job>
+  <job Name="script">
+    <command Name="">
+      <tool Name="/bin/bash build_test.sh"/>
+    </command>
+  </job>
+  <environment Key="global" Value="global"/>
+</devops2:Pipeline>

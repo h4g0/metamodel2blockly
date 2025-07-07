@@ -1,0 +1,32 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="ci" xmi:version="2.0">
+  <when Trigger="push:&#10;    branches:&#10;    - master&#10;"/>
+  <when Trigger="pull_request:&#10;    branches:&#10;    - master&#10;"/>
+  <job Name="clippy_check">
+    <tool Name="ubuntu-latest"/>
+    <command>
+      <tool Name="actions/checkout@v3"/>
+    </command>
+    <command depends="//@job.0/@command.0">
+      <tool Name="actions-rs/toolchain@v1"/>
+      <parameter Parameter="toolchain: nightly&#10;components: clippy&#10;default: true&#10;override: true&#10;"/>
+    </command>
+    <command depends="//@job.0/@command.1">
+      <tool Name="actions-rs/clippy-check@v1"/>
+      <parameter Parameter="token: ${{ secrets.GITHUB_TOKEN }}&#10;args: --all-features -- -A 'clippy::uninlined_format_args'&#10;"/>
+    </command>
+  </job>
+  <job Name="run_test">
+    <tool Name="ubuntu-latest"/>
+    <command>
+      <tool Name="actions/checkout@v3"/>
+    </command>
+    <command depends="//@job.1/@command.0">
+      <tool Name="actions-rs/toolchain@v1"/>
+      <parameter Parameter="toolchain: nightly&#10;default: true&#10;override: true&#10;"/>
+    </command>
+    <command depends="//@job.1/@command.1">
+      <tool Name="cargo test -v --all --no-fail-fast"/>
+    </command>
+  </job>
+</devops2:Pipeline>

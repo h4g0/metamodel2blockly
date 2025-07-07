@@ -1,0 +1,29 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="" xmi:version="2.0">
+  <tool Name="language: node_js&#10;"/>
+  <tool Name="node_js:&#10;- '8'&#10;"/>
+  <job Name="install">
+    <command Name="">
+      <tool Name="yarn install"/>
+    </command>
+    <command Name="" depends="//@job.0/@command.0">
+      <tool Name="yarn lerna run build"/>
+    </command>
+  </job>
+  <job Name="script">
+    <command Name="">
+      <tool Name="yarn lerna run lint"/>
+    </command>
+    <command Name="" depends="//@job.1/@command.0">
+      <tool Name="yarn lerna run test"/>
+    </command>
+  </job>
+  <job Name="after_success">
+    <command Name="">
+      <tool Name="yarn npm-cli-login"/>
+    </command>
+    <command Name="" depends="//@job.2/@command.0">
+      <tool Name="test $TRAVIS_PULL_REQUEST == &quot;false&quot; &amp;&amp; test $TRAVIS_BRANCH == &quot;master&quot; &amp;&amp; yarn run pre &amp;&amp; yarn run publish &amp;&amp; yarn run post &amp;&amp; travis/push.sh"/>
+    </command>
+  </job>
+</devops2:Pipeline>

@@ -1,0 +1,24 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="Deployment" xmi:version="2.0">
+  <when Trigger="push:&#10;    tags:&#10;    - v*&#10;"/>
+  <job Name="deploy">
+    <tool Name="ubuntu-latest"/>
+    <command>
+      <tool Name="actions/checkout@v3"/>
+    </command>
+    <command Name="Set up Python 3.10" depends="//@job.0/@command.0">
+      <tool Name="actions/setup-python@v4"/>
+      <parameter Parameter="python-version: '3.10'&#10;"/>
+    </command>
+    <command Name="Install dependencies" depends="//@job.0/@command.1">
+      <tool Name="python -m pip install --upgrade pip&#10;pip install tox&#10;"/>
+    </command>
+    <command Name="Build package" depends="//@job.0/@command.2">
+      <tool Name="tox -e build-package"/>
+    </command>
+    <command Name="Publish package" depends="//@job.0/@command.3">
+      <tool Name="pypa/gh-action-pypi-publish@release/v1"/>
+      <parameter Parameter="password: ${{ secrets.TWINE_API_KEY }}&#10;skip-existing: true&#10;verify-metadata: true&#10;verbose: true&#10;"/>
+    </command>
+  </job>
+</devops2:Pipeline>

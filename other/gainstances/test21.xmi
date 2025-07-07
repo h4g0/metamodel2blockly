@@ -1,0 +1,74 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="CI" xmi:version="2.0">
+  <when Trigger="push:&#10;    branches:&#10;    - main&#10;    - solution&#10;"/>
+  <when Trigger="pull_request:&#10;    branches:&#10;    - main&#10;    - solution&#10;"/>
+  <job Name="build">
+    <environment Key="TERM" Value="dumb"/>
+    <tool Name="ubuntu-latest"/>
+    <command>
+      <tool Name="actions/checkout@v2"/>
+    </command>
+    <command Name="Set up JDK 11" depends="//@job.0/@command.0">
+      <tool Name="actions/setup-java@v1"/>
+      <parameter Parameter="java-version: 11&#10;"/>
+    </command>
+    <command Name="Build and check" depends="//@job.0/@command.1">
+      <tool Name="./gradlew assembleDebug assembleDebugAndroidTest app:lintDebug testDebug"/>
+    </command>
+    <command Name="Upload app APK" depends="//@job.0/@ifthenelse.2/@true/@command.0">
+      <tool Name="actions/upload-artifact@v1"/>
+      <parameter Parameter="name: app-debug&#10;path: app/build/outputs/apk/debug/app-debug.apk&#10;"/>
+    </command>
+    <command Name="Upload Android Test APK" depends="//@job.0/@command.3">
+      <tool Name="actions/upload-artifact@v1"/>
+      <parameter Parameter="name: app-debug-androidTest&#10;path: app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk&#10;"/>
+    </command>
+    <ifthenelse Condition="always()">
+      <true>
+        <command Name="Upload build reports" depends="//@job.0/@command.2">
+          <tool Name="actions/upload-artifact@v1"/>
+          <parameter Parameter="name: build-reports&#10;path: app/build/reports&#10;"/>
+        </command>
+      </true>
+    </ifthenelse>
+    <ifthenelse Condition="always()">
+      <true>
+        <command Name="Copy test results" depends="//@job.0/@ifthenelse.0/@true/@command.0">
+          <tool Name="mkdir -p junit&#10;find . -type f -regex &quot;.*/build/test-results/.*xml&quot; -exec cp {} junit/ \;&#10;"/>
+        </command>
+      </true>
+    </ifthenelse>
+    <ifthenelse Condition="always()">
+      <true>
+        <command Name="Upload test results" depends="//@job.0/@ifthenelse.1/@true/@command.0">
+          <tool Name="actions/upload-artifact@v1"/>
+          <parameter Parameter="name: junit-results&#10;path: junit&#10;"/>
+        </command>
+      </true>
+    </ifthenelse>
+  </job>
+  <job Name="firebase" depends="//@job.0">
+    <tool Name="ubuntu-18.04"/>
+    <command>
+      <tool Name="actions/checkout@v1"/>
+    </command>
+    <command Name="Download app APK" depends="//@job.1/@command.0">
+      <tool Name="actions/download-artifact@v1"/>
+      <parameter Parameter="name: app-debug&#10;"/>
+    </command>
+    <command Name="Download Android test APK" depends="//@job.1/@command.1">
+      <tool Name="actions/download-artifact@v1"/>
+      <parameter Parameter="name: app-debug-androidTest&#10;"/>
+    </command>
+    <command Name="Login to Google Cloud" depends="//@job.1/@command.2">
+      <tool Name="google-github-actions/setup-gcloud@master"/>
+      <parameter Parameter="version: 281.0.0&#10;service_account_key: ${{ secrets.FTL_KEY_BASE64 }}&#10;"/>
+    </command>
+    <command Name="Set current project" depends="//@job.1/@command.3">
+      <tool Name="gcloud config set project ${{ secrets.FIREBASE_PROJECT_ID }}"/>
+    </command>
+    <command Name="Run Instrumentation Tests in Firebase Test Lab" depends="//@job.1/@command.4">
+      <tool Name="gcloud firebase test android run --type instrumentation --app app-debug/app-debug.apk --test app-debug-androidTest/app-debug-androidTest.apk --device model=Pixel2,version=28,locale=pl,orientation=portrait"/>
+    </command>
+  </job>
+</devops2:Pipeline>

@@ -1,0 +1,18 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="CI" xmi:version="2.0">
+  <when Trigger="push:&#10;    branches:&#10;    - master&#10;"/>
+  <when Trigger="pull_request: null&#10;"/>
+  <job Name="test">
+    <tool Name="${{ matrix.platform }}"/>
+    <tool Name="strategy:&#10;    matrix:&#10;        platform:&#10;        - ubuntu-latest&#10;"/>
+    <command>
+      <tool Name="actions/checkout@v2"/>
+    </command>
+    <command Name="Install dependencies" depends="//@job.0/@command.0">
+      <tool Name="sudo apt update&#10;sudo apt install curl dnsutils jq netcat shellcheck jq testssl.sh python3&#10;"/>
+    </command>
+    <command Name="Run tests" depends="//@job.0/@command.1">
+      <tool Name="./util/test"/>
+    </command>
+  </job>
+</devops2:Pipeline>

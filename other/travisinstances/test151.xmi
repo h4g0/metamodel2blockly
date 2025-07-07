@@ -1,0 +1,33 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="" xmi:version="2.0">
+  <tool Name="language: ruby&#10;"/>
+  <tool Name="cache: bundler&#10;"/>
+  <tool Name="rvm:&#10;- 2.2.6&#10;- 2.3.3&#10;- 2.4.0&#10;"/>
+  <job Name="before_script">
+    <command Name="">
+      <tool Name="bundle exec rake db:create"/>
+    </command>
+    <command Name="" depends="//@job.0/@command.0">
+      <tool Name="bundle exec rake db:migrate"/>
+    </command>
+    <command Name="" depends="//@job.0/@command.1">
+      <tool Name="bundle exec rake db:test:prepare"/>
+    </command>
+    <command Name="" depends="//@job.0/@command.2">
+      <tool Name="export DISPLAY=:99.0"/>
+    </command>
+    <command Name="" depends="//@job.0/@command.3">
+      <tool Name="sh -e /etc/init.d/xvfb start"/>
+    </command>
+    <command Name="" depends="//@job.0/@command.4">
+      <tool Name="sleep 3"/>
+    </command>
+  </job>
+  <job Name="env">
+    <command Name="">
+      <tool Name="global"/>
+      <parameter Parameter="- TRAVIS=1&#10;"/>
+    </command>
+  </job>
+  <environment Key="global" Value="global"/>
+</devops2:Pipeline>

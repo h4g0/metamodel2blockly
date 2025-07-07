@@ -1,0 +1,14 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="" xmi:version="2.0">
+  <tool Name="language: node_js&#10;"/>
+  <tool Name="node_js:&#10;- 12.13.1&#10;"/>
+  <tool Name="notification:&#10;    email:&#10;        on_success: never&#10;        on_failure: always&#10;"/>
+  <job Name="script">
+    <command Name="">
+      <tool Name="npm run test"/>
+    </command>
+    <command Name="" depends="//@job.0/@command.0">
+      <tool Name="npm run lint"/>
+    </command>
+  </job>
+</devops2:Pipeline>
