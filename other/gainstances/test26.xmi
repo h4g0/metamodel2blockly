@@ -1,0 +1,27 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="build, test &amp; clippy" xmi:version="2.0">
+  <when Trigger="push: null&#10;"/>
+  <when Trigger="pull_request: null&#10;"/>
+  <job Name="main">
+    <tool Name="ubuntu-latest"/>
+    <command Name="checkout sources">
+      <tool Name="actions/checkout@v2"/>
+    </command>
+    <command Name="install stable toolchain" depends="//@job.0/@command.0">
+      <tool Name="actions-rs/toolchain@v1"/>
+      <parameter Parameter="profile: minimal&#10;toolchain: stable&#10;components: rustfmt, clippy&#10;override: true&#10;"/>
+    </command>
+    <command Name="cargo test" depends="//@job.0/@command.1">
+      <tool Name="actions-rs/cargo@v1"/>
+      <parameter Parameter="command: test&#10;"/>
+    </command>
+    <command Name="cargo fmt" depends="//@job.0/@command.2">
+      <tool Name="actions-rs/cargo@v1"/>
+      <parameter Parameter="command: fmt&#10;args: --all -- --check&#10;"/>
+    </command>
+    <command Name="cargo clippy" depends="//@job.0/@command.3">
+      <tool Name="actions-rs/cargo@v1"/>
+      <parameter Parameter="command: clippy&#10;args: --all-features&#10;"/>
+    </command>
+  </job>
+</devops2:Pipeline>

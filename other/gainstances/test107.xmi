@@ -1,0 +1,36 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="Tests" xmi:version="2.0">
+  <when Trigger="push: null&#10;"/>
+  <when Trigger="pull_request: null&#10;"/>
+  <environment Key="CI" Value="True"/>
+  <environment Key="NODE" Value="14.x"/>
+  <environment Key="FORCE_COLOR" Value="2"/>
+  <job Name="test">
+    <tool Name="ubuntu-latest"/>
+    <command Name="Clone repository">
+      <tool Name="actions/checkout@v2"/>
+    </command>
+    <command Name="Set up Node.js" depends="//@job.0/@command.0">
+      <tool Name="actions/setup-node@v2"/>
+      <parameter Parameter="node-version: ${{ env.NODE }}&#10;"/>
+    </command>
+    <command Name="Install npm dependencies" depends="//@job.0/@command.1">
+      <tool Name="npm ci"/>
+    </command>
+    <command Name="Run tests" depends="//@job.0/@command.2">
+      <tool Name="npm test"/>
+    </command>
+    <command Name="Run Coveralls" depends="//@job.0/@ifthenelse.0/@true/@command.0">
+      <tool Name="coverallsapp/github-action@master"/>
+      <parameter Parameter="github-token: ${{ secrets.GITHUB_TOKEN }}&#10;path-to-lcov: ./tests/dist/coverage/lcov.info&#10;"/>
+    </command>
+    <ifthenelse Condition="github.repository == 'Johann-S/bs-stepper' &amp;&amp; github.event_name == 'push'">
+      <true>
+        <command Name="Run BrowserStack tests" depends="//@job.0/@command.3">
+          <tool Name="npm run browserstack"/>
+          <parameter Parameter="BROWSER_STACK_ACCESS_KEY: ${{ secrets.BROWSER_STACK_ACCESS_KEY }}&#10;BROWSER_STACK_USERNAME: ${{ secrets.BROWSER_STACK_USERNAME }}&#10;"/>
+        </command>
+      </true>
+    </ifthenelse>
+  </job>
+</devops2:Pipeline>

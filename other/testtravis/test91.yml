@@ -1,0 +1,26 @@
+language: ruby
+cache: bundler
+bundler_args: --without development
+rvm:
+  - ruby-head
+  - ruby
+  - jruby-head
+  - jruby
+  - 2.1.0
+  - 2.0.0
+  - 1.9.3
+  - rbx-2
+matrix:
+  fast_finish: true
+  allow_failures:
+    - rvm: ruby-head
+    - rvm: ruby
+    - rvm: jruby-head
+    - rvm: jruby
+    - rvm: rbx-2
+notifications:
+  email: false
+services:
+  - redis-server
+env:
+  - CODECLIMATE_REPO_TOKEN=04a9fef09063cdef2f62cf46531329ad01a9383e3de8270e112480052774f676

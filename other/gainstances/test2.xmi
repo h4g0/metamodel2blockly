@@ -1,0 +1,27 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="Larastan" xmi:version="2.0">
+  <when Trigger="push: null&#10;"/>
+  <when Trigger="pull_request:&#10;    types:&#10;    - opened&#10;"/>
+  <job Name="larastan">
+    <tool Name="ubuntu-latest"/>
+    <tool Name="strategy:&#10;    fail-fast: false&#10;    matrix:&#10;        php:&#10;        - 8.1&#10;"/>
+    <command>
+      <tool Name="actions/checkout@v2"/>
+    </command>
+    <command Name="Install PHP" depends="//@job.0/@command.0">
+      <tool Name="shivammathur/setup-php@v2"/>
+    </command>
+    <command Name="Testing PHP version" depends="//@job.0/@command.1">
+      <tool Name="php -v"/>
+    </command>
+    <command Name="Install Dependencies" depends="//@job.0/@command.2">
+      <tool Name="composer clear-cache&#10;composer install --no-ansi --no-interaction --no-scripts --prefer-dist&#10;"/>
+    </command>
+    <command Name="Prepare Laravel Application" depends="//@job.0/@command.3">
+      <tool Name="cp .env.example .env&#10;php artisan key:generate&#10;"/>
+    </command>
+    <command Name="Execute phpstan" depends="//@job.0/@command.4">
+      <tool Name="composer larastan"/>
+    </command>
+  </job>
+</devops2:Pipeline>

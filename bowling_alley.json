@@ -1,0 +1,577 @@
+{
+  "project": {
+    "id": "f7d8f794-1fed-42d7-9750-f18ad18e07dd",
+    "type": "Project",
+    "name": "bowling_alley",
+    "description": "New project",
+    "owner": "User",
+    "createdAt": "2025-09-25T08:57:24.997Z",
+    "currentDiagramType": "ClassDiagram",
+    "diagrams": {
+      "ClassDiagram": {
+        "id": "840cc9d3-453f-4fa1-9e00-e9d1e6c49741",
+        "title": "Class Diagram",
+        "model": {
+          "version": "3.0.0",
+          "type": "ClassDiagram",
+          "size": {
+            "width": 1200,
+            "height": 488
+          },
+          "interactive": {
+            "elements": {},
+            "relationships": {}
+          },
+          "elements": {
+            "26edc06f-3811-4c36-9f62-d07feba1683c": {
+              "id": "26edc06f-3811-4c36-9f62-d07feba1683c",
+              "name": "League",
+              "type": "Class",
+              "owner": null,
+              "bounds": {
+                "x": -410,
+                "y": -110,
+                "width": 160,
+                "height": 70
+              },
+              "attributes": [
+                "44a217e3-6563-497d-a5c7-c0e6e3ee7dee"
+              ],
+              "methods": []
+            },
+            "44a217e3-6563-497d-a5c7-c0e6e3ee7dee": {
+              "id": "44a217e3-6563-497d-a5c7-c0e6e3ee7dee",
+              "name": "+ name: str",
+              "type": "ClassAttribute",
+              "owner": "26edc06f-3811-4c36-9f62-d07feba1683c",
+              "bounds": {
+                "x": -409.5,
+                "y": -69.5,
+                "width": 159,
+                "height": 30
+              }
+            },
+            "98081687-015b-447d-809a-58dd9493005c": {
+              "id": "98081687-015b-447d-809a-58dd9493005c",
+              "name": "Tournament",
+              "type": "Class",
+              "owner": null,
+              "bounds": {
+                "x": -100,
+                "y": -160,
+                "width": 190,
+                "height": 70
+              },
+              "attributes": [
+                "5de8b900-e715-4f62-a955-894f0c002239"
+              ],
+              "methods": []
+            },
+            "5de8b900-e715-4f62-a955-894f0c002239": {
+              "id": "5de8b900-e715-4f62-a955-894f0c002239",
+              "name": "+ type: TournamentType",
+              "type": "ClassAttribute",
+              "owner": "98081687-015b-447d-809a-58dd9493005c",
+              "bounds": {
+                "x": -99.5,
+                "y": -119.5,
+                "width": 189,
+                "height": 30
+              }
+            },
+            "300265a6-0147-4982-a2a7-3e40f729d8aa": {
+              "id": "300265a6-0147-4982-a2a7-3e40f729d8aa",
+              "name": "TournamentType",
+              "type": "Enumeration",
+              "owner": null,
+              "bounds": {
+                "x": 170,
+                "y": -150,
+                "width": 160,
+                "height": 110
+              },
+              "attributes": [
+                "674dcb78-7c24-474c-bf09-671af259d8fe",
+                "ef561651-c795-43a7-85fd-f431e3148701"
+              ],
+              "methods": []
+            },
+            "674dcb78-7c24-474c-bf09-671af259d8fe": {
+              "id": "674dcb78-7c24-474c-bf09-671af259d8fe",
+              "name": "Pro",
+              "type": "ClassAttribute",
+              "owner": "300265a6-0147-4982-a2a7-3e40f729d8aa",
+              "bounds": {
+                "x": 170.5,
+                "y": -99.5,
+                "width": 159,
+                "height": 30
+              }
+            },
+            "ef561651-c795-43a7-85fd-f431e3148701": {
+              "id": "ef561651-c795-43a7-85fd-f431e3148701",
+              "name": "Amateur",
+              "type": "ClassAttribute",
+              "owner": "300265a6-0147-4982-a2a7-3e40f729d8aa",
+              "bounds": {
+                "x": 170.5,
+                "y": -69.5,
+                "width": 159,
+                "height": 30
+              }
+            },
+            "36b6258e-1ab1-46a2-aea9-d99e85e402f8": {
+              "id": "36b6258e-1ab1-46a2-aea9-d99e85e402f8",
+              "name": "Player",
+              "type": "Class",
+              "owner": null,
+              "bounds": {
+                "x": -410,
+                "y": 60,
+                "width": 160,
+                "height": 160
+              },
+              "attributes": [
+                "d315a311-eb37-45ee-afd4-ef1135daa8dd",
+                "5391efed-a1fe-4c9c-b50e-7f397f0c13a9",
+                "50ce52ad-2ad0-49b9-9616-53eeb8a02b27",
+                "35803249-300b-41a7-9b30-77bd5815981d"
+              ],
+              "methods": []
+            },
+            "d315a311-eb37-45ee-afd4-ef1135daa8dd": {
+              "id": "d315a311-eb37-45ee-afd4-ef1135daa8dd",
+              "name": "+ name: str",
+              "type": "ClassAttribute",
+              "owner": "36b6258e-1ab1-46a2-aea9-d99e85e402f8",
+              "bounds": {
+                "x": -409.5,
+                "y": 100.5,
+                "width": 159,
+                "height": 30
+              }
+            },
+            "5391efed-a1fe-4c9c-b50e-7f397f0c13a9": {
+              "id": "5391efed-a1fe-4c9c-b50e-7f397f0c13a9",
+              "name": "+ dateOfBirth: date",
+              "type": "ClassAttribute",
+              "owner": "36b6258e-1ab1-46a2-aea9-d99e85e402f8",
+              "bounds": {
+                "x": -409.5,
+                "y": 130.5,
+                "width": 159,
+                "height": 30
+              }
+            },
+            "50ce52ad-2ad0-49b9-9616-53eeb8a02b27": {
+              "id": "50ce52ad-2ad0-49b9-9616-53eeb8a02b27",
+              "name": "+ height: float",
+              "type": "ClassAttribute",
+              "owner": "36b6258e-1ab1-46a2-aea9-d99e85e402f8",
+              "bounds": {
+                "x": -409.5,
+                "y": 160.5,
+                "width": 159,
+                "height": 30
+              }
+            },
+            "35803249-300b-41a7-9b30-77bd5815981d": {
+              "id": "35803249-300b-41a7-9b30-77bd5815981d",
+              "name": "+ isPro: bool",
+              "type": "ClassAttribute",
+              "owner": "36b6258e-1ab1-46a2-aea9-d99e85e402f8",
+              "bounds": {
+                "x": -409.5,
+                "y": 190.5,
+                "width": 159,
+                "height": 30
+              }
+            },
+            "3335d70c-ad17-4764-a6d3-9da2169b845c": {
+              "id": "3335d70c-ad17-4764-a6d3-9da2169b845c",
+              "name": "Game",
+              "type": "Class",
+              "owner": null,
+              "bounds": {
+                "x": -90,
+                "y": 150,
+                "width": 160,
+                "height": 70
+              },
+              "attributes": [
+                "32c6b158-4095-4c95-b34b-404bcbc1e11b"
+              ],
+              "methods": []
+            },
+            "32c6b158-4095-4c95-b34b-404bcbc1e11b": {
+              "id": "32c6b158-4095-4c95-b34b-404bcbc1e11b",
+              "name": "+ attribute: str",
+              "type": "ClassAttribute",
+              "owner": "3335d70c-ad17-4764-a6d3-9da2169b845c",
+              "bounds": {
+                "x": -89.5,
+                "y": 190.5,
+                "width": 159,
+                "height": 30
+              }
+            },
+            "55ba6255-968f-467c-9527-6011de642396": {
+              "id": "55ba6255-968f-467c-9527-6011de642396",
+              "name": "Matchup",
+              "type": "Class",
+              "owner": null,
+              "bounds": {
+                "x": -90,
+                "y": 0,
+                "width": 160,
+                "height": 70
+              },
+              "attributes": [
+                "de48879c-8eac-4af4-8d29-6c6efbd82599"
+              ],
+              "methods": []
+            },
+            "de48879c-8eac-4af4-8d29-6c6efbd82599": {
+              "id": "de48879c-8eac-4af4-8d29-6c6efbd82599",
+              "name": "+ attribute: str",
+              "type": "ClassAttribute",
+              "owner": "55ba6255-968f-467c-9527-6011de642396",
+              "bounds": {
+                "x": -89.5,
+                "y": 40.5,
+                "width": 159,
+                "height": 30
+              }
+            },
+            "fda3b6ee-476f-429b-8e4d-91a2cb557c57": {
+              "id": "fda3b6ee-476f-429b-8e4d-91a2cb557c57",
+              "name": "Frame",
+              "type": "Class",
+              "owner": null,
+              "bounds": {
+                "x": 200,
+                "y": 130,
+                "width": 160,
+                "height": 70
+              },
+              "attributes": [
+                "bf8c6a8a-0207-4991-a54e-10403f416384"
+              ],
+              "methods": []
+            },
+            "bf8c6a8a-0207-4991-a54e-10403f416384": {
+              "id": "bf8c6a8a-0207-4991-a54e-10403f416384",
+              "name": "+ score: int",
+              "type": "ClassAttribute",
+              "owner": "fda3b6ee-476f-429b-8e4d-91a2cb557c57",
+              "bounds": {
+                "x": 200.5,
+                "y": 170.5,
+                "width": 159,
+                "height": 30
+              }
+            },
+            "e2133190-e961-45ad-8a17-ba626ed48ee2": {
+              "id": "e2133190-e961-45ad-8a17-ba626ed48ee2",
+              "name": "",
+              "type": "ClassOCLConstraint",
+              "owner": null,
+              "bounds": {
+                "x": -580,
+                "y": -30,
+                "width": 160,
+                "height": 100
+              },
+              "constraint": "`Context \"Player\" inv: self.height >= 0`\n"
+            }
+          },
+          "relationships": {
+            "4c868d63-43ad-4bed-8bfc-8b2ee60e0252": {
+              "id": "4c868d63-43ad-4bed-8bfc-8b2ee60e0252",
+              "name": "",
+              "type": "ClassComposition",
+              "owner": null,
+              "bounds": {
+                "x": -15,
+                "y": -90,
+                "width": 18.90625,
+                "height": 100
+              },
+              "path": [
+                {
+                  "x": 5,
+                  "y": 90
+                },
+                {
+                  "x": 5,
+                  "y": 0
+                }
+              ],
+              "source": {
+                "direction": "Up",
+                "element": "55ba6255-968f-467c-9527-6011de642396",
+                "multiplicity": "*",
+                "role": ""
+              },
+              "target": {
+                "direction": "Down",
+                "element": "98081687-015b-447d-809a-58dd9493005c",
+                "multiplicity": "1",
+                "role": ""
+              },
+              "isManuallyLayouted": false
+            },
+            "68fd3312-ea23-43a9-9858-e537b168f100": {
+              "id": "68fd3312-ea23-43a9-9858-e537b168f100",
+              "name": "",
+              "type": "ClassComposition",
+              "owner": null,
+              "bounds": {
+                "x": -335,
+                "y": -40,
+                "width": 36.6875,
+                "height": 110
+              },
+              "path": [
+                {
+                  "x": 5,
+                  "y": 100
+                },
+                {
+                  "x": 5,
+                  "y": 0
+                }
+              ],
+              "source": {
+                "direction": "Up",
+                "element": "36b6258e-1ab1-46a2-aea9-d99e85e402f8",
+                "multiplicity": "0..*",
+                "role": ""
+              },
+              "target": {
+                "direction": "Down",
+                "element": "26edc06f-3811-4c36-9f62-d07feba1683c",
+                "multiplicity": "1..1",
+                "role": ""
+              },
+              "isManuallyLayouted": false
+            },
+            "b949f6a3-f098-4db6-95d7-d54b88fb12e8": {
+              "id": "b949f6a3-f098-4db6-95d7-d54b88fb12e8",
+              "name": "",
+              "type": "ClassUnidirectional",
+              "owner": null,
+              "bounds": {
+                "x": -250,
+                "y": 175,
+                "width": 160,
+                "height": 49
+              },
+              "path": [
+                {
+                  "x": 160,
+                  "y": 10
+                },
+                {
+                  "x": 0,
+                  "y": 10
+                }
+              ],
+              "source": {
+                "direction": "Left",
+                "element": "3335d70c-ad17-4764-a6d3-9da2169b845c",
+                "multiplicity": "1",
+                "role": ""
+              },
+              "target": {
+                "direction": "Right",
+                "element": "36b6258e-1ab1-46a2-aea9-d99e85e402f8",
+                "multiplicity": "1",
+                "role": ""
+              },
+              "isManuallyLayouted": false
+            },
+            "e86e8e7a-1fc8-4a04-a34f-c3538485be0f": {
+              "id": "e86e8e7a-1fc8-4a04-a34f-c3538485be0f",
+              "name": "",
+              "type": "ClassComposition",
+              "owner": null,
+              "bounds": {
+                "x": 70,
+                "y": 165,
+                "width": 130,
+                "height": 49
+              },
+              "path": [
+                {
+                  "x": 130,
+                  "y": 10
+                },
+                {
+                  "x": 0,
+                  "y": 10
+                }
+              ],
+              "source": {
+                "direction": "Left",
+                "element": "fda3b6ee-476f-429b-8e4d-91a2cb557c57",
+                "multiplicity": "*",
+                "role": ""
+              },
+              "target": {
+                "direction": "Downright",
+                "element": "3335d70c-ad17-4764-a6d3-9da2169b845c",
+                "multiplicity": "1",
+                "role": ""
+              },
+              "isManuallyLayouted": false
+            },
+            "dd0833a6-051c-4afc-9296-ac3a5a3b4222": {
+              "id": "dd0833a6-051c-4afc-9296-ac3a5a3b4222",
+              "name": "",
+              "type": "ClassComposition",
+              "owner": null,
+              "bounds": {
+                "x": -15,
+                "y": 70,
+                "width": 18.90625,
+                "height": 90
+              },
+              "path": [
+                {
+                  "x": 5,
+                  "y": 80
+                },
+                {
+                  "x": 5,
+                  "y": 0
+                }
+              ],
+              "source": {
+                "direction": "Up",
+                "element": "3335d70c-ad17-4764-a6d3-9da2169b845c",
+                "multiplicity": "2",
+                "role": ""
+              },
+              "target": {
+                "direction": "Down",
+                "element": "55ba6255-968f-467c-9527-6011de642396",
+                "multiplicity": "1",
+                "role": ""
+              },
+              "isManuallyLayouted": false
+            },
+            "8afa358f-7093-46b0-8258-b64cd1f38205": {
+              "id": "8afa358f-7093-46b0-8258-b64cd1f38205",
+              "name": "",
+              "type": "ClassOCLLink",
+              "owner": null,
+              "bounds": {
+                "x": -505,
+                "y": 70,
+                "width": 95,
+                "height": 91
+              },
+              "path": [
+                {
+                  "x": 95,
+                  "y": 70
+                },
+                {
+                  "x": 5,
+                  "y": 70
+                },
+                {
+                  "x": 5,
+                  "y": 0
+                }
+              ],
+              "source": {
+                "direction": "Left",
+                "element": "36b6258e-1ab1-46a2-aea9-d99e85e402f8",
+                "multiplicity": "",
+                "role": ""
+              },
+              "target": {
+                "direction": "Down",
+                "element": "e2133190-e961-45ad-8a17-ba626ed48ee2",
+                "multiplicity": "",
+                "role": ""
+              },
+              "isManuallyLayouted": false
+            }
+          },
+          "assessments": {}
+        },
+        "lastUpdate": "2025-09-25T11:00:02.135Z"
+      },
+      "ObjectDiagram": {
+        "id": "daa87857-cdc5-43f7-9a8f-f5374364345d",
+        "title": "Object Diagram",
+        "model": {
+          "version": "3.0.0",
+          "type": "ObjectDiagram",
+          "size": {
+            "width": 1400,
+            "height": 740
+          },
+          "elements": {},
+          "relationships": {},
+          "interactive": {
+            "elements": {},
+            "relationships": {}
+          },
+          "assessments": {}
+        },
+        "lastUpdate": "2025-09-25T08:57:24.997Z"
+      },
+      "StateMachineDiagram": {
+        "id": "014ca72e-3251-49b8-8c4d-0fa4ae684d21",
+        "title": "State Machine Diagram",
+        "model": {
+          "version": "3.0.0",
+          "type": "StateMachineDiagram",
+          "size": {
+            "width": 1400,
+            "height": 740
+          },
+          "elements": {},
+          "relationships": {},
+          "interactive": {
+            "elements": {},
+            "relationships": {}
+          },
+          "assessments": {}
+        },
+        "lastUpdate": "2025-09-25T08:57:24.997Z"
+      },
+      "AgentDiagram": {
+        "id": "434eeebf-2a53-48d8-be25-c3036d7cf48e",
+        "title": "Agent Diagram",
+        "model": {
+          "version": "3.0.0",
+          "type": "AgentDiagram",
+          "size": {
+            "width": 1400,
+            "height": 740
+          },
+          "elements": {},
+          "relationships": {},
+          "interactive": {
+            "elements": {},
+            "relationships": {}
+          },
+          "assessments": {}
+        },
+        "lastUpdate": "2025-09-25T08:57:24.997Z"
+      }
+    },
+    "settings": {
+      "defaultDiagramType": "ClassDiagram",
+      "autoSave": true,
+      "collaborationEnabled": false
+    }
+  },
+  "exportedAt": "2025-10-15T10:35:06.341Z",
+  "version": "2.0.0"
+}

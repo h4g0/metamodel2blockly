@@ -1,0 +1,431 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="Swupd tests" xmi:version="2.0">
+  <when Trigger="push: null&#10;"/>
+  <when Trigger="pull_request: null&#10;"/>
+  <environment Key="RUNNING_IN_CI" Value="True"/>
+  <environment Key="NUM_JOBS" Value="10"/>
+  <job Name="formatting-check">
+    <tool Name="ubuntu-latest"/>
+    <command>
+      <tool Name="actions/checkout@v3"/>
+    </command>
+    <command Name="Run clang-format style check" depends="//@job.0/@command.0">
+      <tool Name="jidicula/clang-format-action@v4.11.0"/>
+      <parameter Parameter="clang-format-version: '16'&#10;check-path: src&#10;"/>
+    </command>
+  </job>
+  <job Name="unit_and_style">
+    <tool Name="ubuntu-latest"/>
+    <command>
+      <tool Name="actions/checkout@v3"/>
+    </command>
+    <command Name="cache-dependencies" depends="//@job.1/@command.0">
+      <tool Name="actions/cache@v3"/>
+      <parameter Parameter="path: dependencies&#10;key: swupd-dependencies&#10;"/>
+    </command>
+    <command Name="build_dep" depends="//@job.1/@command.1">
+      <tool Name="scripts/github_actions/build_ci_dependencies.bash"/>
+    </command>
+    <command Name="build" depends="//@job.1/@command.2">
+      <tool Name="scripts/github_actions/build_ci_style.bash"/>
+    </command>
+    <command Name="check style" depends="//@job.1/@command.3">
+      <tool Name="make compliant &amp;&amp; make shellcheck &amp;&amp; make docs-coverage"/>
+    </command>
+    <command Name="check install" depends="//@job.1/@command.4">
+      <tool Name="sudo make install &amp;&amp; make install-check"/>
+    </command>
+    <command Name="run unit tests" depends="//@job.1/@command.5">
+      <tool Name="make check"/>
+    </command>
+    <command Name="run distcheck" depends="//@job.1/@command.6">
+      <tool Name="make distcheck"/>
+    </command>
+    <ifthenelse Condition="failure()">
+      <true>
+        <command Name="print status" depends="//@job.1/@command.7">
+          <tool Name="cat test-suite.log"/>
+        </command>
+      </true>
+    </ifthenelse>
+  </job>
+  <job Name="api">
+    <tool Name="ubuntu-latest"/>
+    <command>
+      <tool Name="actions/checkout@v3"/>
+      <parameter Parameter="fetch-depth: 0&#10;"/>
+    </command>
+    <command Name="install_bats" depends="//@job.2/@command.0">
+      <tool Name="sudo apt-get install bats"/>
+    </command>
+    <command Name="api" depends="//@job.2/@command.1">
+      <tool Name="test/code_analysis/check_api_changes.bats"/>
+    </command>
+  </job>
+  <job Name="test_job1">
+    <environment Key="JOB_NUMBER" Value="1"/>
+    <tool Name="ubuntu-latest"/>
+    <command>
+      <tool Name="actions/checkout@v3"/>
+    </command>
+    <command Name="cache-dependencies" depends="//@job.3/@command.0">
+      <tool Name="actions/cache@v3"/>
+      <parameter Parameter="path: dependencies&#10;key: swupd-dependencies&#10;"/>
+    </command>
+    <command Name="build" depends="//@job.3/@command.1">
+      <tool Name="scripts/github_actions/build_ci_dependencies.bash&#10;scripts/github_actions/build_ci.bash&#10;"/>
+    </command>
+    <command Name="run check" depends="//@job.3/@command.2">
+      <tool Name="scripts/github_actions/run_check.bash &quot;$JOB_NUMBER&quot; &quot;$NUM_JOBS&quot;"/>
+    </command>
+    <command depends="//@job.3/@command.3">
+      <tool Name="actions/upload-artifact@v1"/>
+      <parameter Parameter="name: job-${{ env.JOB_NUMBER }}&#10;path: job-${{ env.JOB_NUMBER }}&#10;"/>
+    </command>
+    <ifthenelse Condition="failure()">
+      <true>
+        <command Name="print status" depends="//@job.3/@command.4">
+          <tool Name="cat test-suite.log"/>
+        </command>
+      </true>
+    </ifthenelse>
+  </job>
+  <job Name="test_job2">
+    <environment Key="JOB_NUMBER" Value="2"/>
+    <tool Name="ubuntu-latest"/>
+    <command>
+      <tool Name="actions/checkout@v3"/>
+    </command>
+    <command Name="cache-dependencies" depends="//@job.4/@command.0">
+      <tool Name="actions/cache@v3"/>
+      <parameter Parameter="path: dependencies&#10;key: swupd-dependencies&#10;"/>
+    </command>
+    <command Name="build" depends="//@job.4/@command.1">
+      <tool Name="scripts/github_actions/build_ci_dependencies.bash&#10;scripts/github_actions/build_ci.bash&#10;"/>
+    </command>
+    <command Name="run check" depends="//@job.4/@command.2">
+      <tool Name="scripts/github_actions/run_check.bash &quot;$JOB_NUMBER&quot; &quot;$NUM_JOBS&quot;"/>
+    </command>
+    <command depends="//@job.4/@command.3">
+      <tool Name="actions/upload-artifact@v1"/>
+      <parameter Parameter="name: job-${{ env.JOB_NUMBER }}&#10;path: job-${{ env.JOB_NUMBER }}&#10;"/>
+    </command>
+    <ifthenelse Condition="failure()">
+      <true>
+        <command Name="print status" depends="//@job.4/@command.4">
+          <tool Name="cat test-suite.log"/>
+        </command>
+      </true>
+    </ifthenelse>
+  </job>
+  <job Name="test_job3">
+    <environment Key="JOB_NUMBER" Value="3"/>
+    <tool Name="ubuntu-latest"/>
+    <command>
+      <tool Name="actions/checkout@v3"/>
+    </command>
+    <command Name="cache-dependencies" depends="//@job.5/@command.0">
+      <tool Name="actions/cache@v3"/>
+      <parameter Parameter="path: dependencies&#10;key: swupd-dependencies&#10;"/>
+    </command>
+    <command Name="build" depends="//@job.5/@command.1">
+      <tool Name="scripts/github_actions/build_ci_dependencies.bash&#10;scripts/github_actions/build_ci.bash&#10;"/>
+    </command>
+    <command Name="run check" depends="//@job.5/@command.2">
+      <tool Name="scripts/github_actions/run_check.bash &quot;$JOB_NUMBER&quot; &quot;$NUM_JOBS&quot;"/>
+    </command>
+    <command depends="//@job.5/@command.3">
+      <tool Name="actions/upload-artifact@v1"/>
+      <parameter Parameter="name: job-${{ env.JOB_NUMBER }}&#10;path: job-${{ env.JOB_NUMBER }}&#10;"/>
+    </command>
+    <ifthenelse Condition="failure()">
+      <true>
+        <command Name="print status" depends="//@job.5/@command.4">
+          <tool Name="cat test-suite.log"/>
+        </command>
+      </true>
+    </ifthenelse>
+  </job>
+  <job Name="test_job4">
+    <environment Key="JOB_NUMBER" Value="4"/>
+    <tool Name="ubuntu-latest"/>
+    <command>
+      <tool Name="actions/checkout@v1"/>
+    </command>
+    <command Name="cache-dependencies" depends="//@job.6/@command.0">
+      <tool Name="actions/cache@v3"/>
+      <parameter Parameter="path: dependencies&#10;key: swupd-dependencies&#10;"/>
+    </command>
+    <command Name="build" depends="//@job.6/@command.1">
+      <tool Name="scripts/github_actions/build_ci_dependencies.bash&#10;scripts/github_actions/build_ci.bash&#10;"/>
+    </command>
+    <command Name="run check" depends="//@job.6/@command.2">
+      <tool Name="scripts/github_actions/run_check.bash &quot;$JOB_NUMBER&quot; &quot;$NUM_JOBS&quot;"/>
+    </command>
+    <command depends="//@job.6/@command.3">
+      <tool Name="actions/upload-artifact@v1"/>
+      <parameter Parameter="name: job-${{ env.JOB_NUMBER }}&#10;path: job-${{ env.JOB_NUMBER }}&#10;"/>
+    </command>
+    <ifthenelse Condition="failure()">
+      <true>
+        <command Name="print status" depends="//@job.6/@command.4">
+          <tool Name="cat test-suite.log"/>
+        </command>
+      </true>
+    </ifthenelse>
+  </job>
+  <job Name="test_job5">
+    <environment Key="JOB_NUMBER" Value="5"/>
+    <tool Name="ubuntu-latest"/>
+    <command>
+      <tool Name="actions/checkout@v3"/>
+    </command>
+    <command Name="cache-dependencies" depends="//@job.7/@command.0">
+      <tool Name="actions/cache@v3"/>
+      <parameter Parameter="path: dependencies&#10;key: swupd-dependencies&#10;"/>
+    </command>
+    <command Name="build" depends="//@job.7/@command.1">
+      <tool Name="scripts/github_actions/build_ci_dependencies.bash&#10;scripts/github_actions/build_ci.bash&#10;"/>
+    </command>
+    <command Name="run check" depends="//@job.7/@command.2">
+      <tool Name="scripts/github_actions/run_check.bash &quot;$JOB_NUMBER&quot; &quot;$NUM_JOBS&quot;"/>
+    </command>
+    <command depends="//@job.7/@command.3">
+      <tool Name="actions/upload-artifact@v1"/>
+      <parameter Parameter="name: job-${{ env.JOB_NUMBER }}&#10;path: job-${{ env.JOB_NUMBER }}&#10;"/>
+    </command>
+    <ifthenelse Condition="failure()">
+      <true>
+        <command Name="print status" depends="//@job.7/@command.4">
+          <tool Name="cat test-suite.log"/>
+        </command>
+      </true>
+    </ifthenelse>
+  </job>
+  <job Name="test_job6">
+    <environment Key="JOB_NUMBER" Value="6"/>
+    <tool Name="ubuntu-latest"/>
+    <command>
+      <tool Name="actions/checkout@v3"/>
+    </command>
+    <command Name="cache-dependencies" depends="//@job.8/@command.0">
+      <tool Name="actions/cache@v3"/>
+      <parameter Parameter="path: dependencies&#10;key: swupd-dependencies&#10;"/>
+    </command>
+    <command Name="build" depends="//@job.8/@command.1">
+      <tool Name="scripts/github_actions/build_ci_dependencies.bash&#10;scripts/github_actions/build_ci.bash&#10;"/>
+    </command>
+    <command Name="run check" depends="//@job.8/@command.2">
+      <tool Name="scripts/github_actions/run_check.bash &quot;$JOB_NUMBER&quot; &quot;$NUM_JOBS&quot;"/>
+    </command>
+    <command depends="//@job.8/@command.3">
+      <tool Name="actions/upload-artifact@v1"/>
+      <parameter Parameter="name: job-${{ env.JOB_NUMBER }}&#10;path: job-${{ env.JOB_NUMBER }}&#10;"/>
+    </command>
+    <ifthenelse Condition="failure()">
+      <true>
+        <command Name="print status" depends="//@job.8/@command.4">
+          <tool Name="cat test-suite.log"/>
+        </command>
+      </true>
+    </ifthenelse>
+  </job>
+  <job Name="test_job7">
+    <environment Key="JOB_NUMBER" Value="7"/>
+    <tool Name="ubuntu-latest"/>
+    <command>
+      <tool Name="actions/checkout@v3"/>
+    </command>
+    <command Name="cache-dependencies" depends="//@job.9/@command.0">
+      <tool Name="actions/cache@v3"/>
+      <parameter Parameter="path: dependencies&#10;key: swupd-dependencies&#10;"/>
+    </command>
+    <command Name="build" depends="//@job.9/@command.1">
+      <tool Name="scripts/github_actions/build_ci_dependencies.bash&#10;scripts/github_actions/build_ci.bash&#10;"/>
+    </command>
+    <command Name="run check" depends="//@job.9/@command.2">
+      <tool Name="scripts/github_actions/run_check.bash &quot;$JOB_NUMBER&quot; &quot;$NUM_JOBS&quot;"/>
+    </command>
+    <command depends="//@job.9/@command.3">
+      <tool Name="actions/upload-artifact@v1"/>
+      <parameter Parameter="name: job-${{ env.JOB_NUMBER }}&#10;path: job-${{ env.JOB_NUMBER }}&#10;"/>
+    </command>
+    <ifthenelse Condition="failure()">
+      <true>
+        <command Name="print status" depends="//@job.9/@command.4">
+          <tool Name="cat test-suite.log"/>
+        </command>
+      </true>
+    </ifthenelse>
+  </job>
+  <job Name="test_job8">
+    <environment Key="JOB_NUMBER" Value="8"/>
+    <tool Name="ubuntu-latest"/>
+    <command>
+      <tool Name="actions/checkout@v3"/>
+    </command>
+    <command Name="cache-dependencies" depends="//@job.10/@command.0">
+      <tool Name="actions/cache@v3"/>
+      <parameter Parameter="path: dependencies&#10;key: swupd-dependencies&#10;"/>
+    </command>
+    <command Name="build" depends="//@job.10/@command.1">
+      <tool Name="scripts/github_actions/build_ci_dependencies.bash&#10;scripts/github_actions/build_ci.bash&#10;"/>
+    </command>
+    <command Name="run check" depends="//@job.10/@command.2">
+      <tool Name="scripts/github_actions/run_check.bash &quot;$JOB_NUMBER&quot; &quot;$NUM_JOBS&quot;"/>
+    </command>
+    <command depends="//@job.10/@command.3">
+      <tool Name="actions/upload-artifact@v1"/>
+      <parameter Parameter="name: job-${{ env.JOB_NUMBER }}&#10;path: job-${{ env.JOB_NUMBER }}&#10;"/>
+    </command>
+    <ifthenelse Condition="failure()">
+      <true>
+        <command Name="print status" depends="//@job.10/@command.4">
+          <tool Name="cat test-suite.log"/>
+        </command>
+      </true>
+    </ifthenelse>
+  </job>
+  <job Name="test_job9">
+    <environment Key="JOB_NUMBER" Value="9"/>
+    <tool Name="ubuntu-latest"/>
+    <command>
+      <tool Name="actions/checkout@v3"/>
+    </command>
+    <command Name="cache-dependencies" depends="//@job.11/@command.0">
+      <tool Name="actions/cache@v3"/>
+      <parameter Parameter="path: dependencies&#10;key: swupd-dependencies&#10;"/>
+    </command>
+    <command Name="build" depends="//@job.11/@command.1">
+      <tool Name="scripts/github_actions/build_ci_dependencies.bash&#10;scripts/github_actions/build_ci.bash&#10;"/>
+    </command>
+    <command Name="run check" depends="//@job.11/@command.2">
+      <tool Name="scripts/github_actions/run_check.bash &quot;$JOB_NUMBER&quot; &quot;$NUM_JOBS&quot;"/>
+    </command>
+    <command depends="//@job.11/@command.3">
+      <tool Name="actions/upload-artifact@v1"/>
+      <parameter Parameter="name: job-${{ env.JOB_NUMBER }}&#10;path: job-${{ env.JOB_NUMBER }}&#10;"/>
+    </command>
+    <ifthenelse Condition="failure()">
+      <true>
+        <command Name="print status" depends="//@job.11/@command.4">
+          <tool Name="cat test-suite.log"/>
+        </command>
+      </true>
+    </ifthenelse>
+  </job>
+  <job Name="test_job10">
+    <environment Key="JOB_NUMBER" Value="10"/>
+    <tool Name="ubuntu-latest"/>
+    <command>
+      <tool Name="actions/checkout@v3"/>
+    </command>
+    <command Name="cache-dependencies" depends="//@job.12/@command.0">
+      <tool Name="actions/cache@v3"/>
+      <parameter Parameter="path: dependencies&#10;key: swupd-dependencies&#10;"/>
+    </command>
+    <command Name="build" depends="//@job.12/@command.1">
+      <tool Name="scripts/github_actions/build_ci_dependencies.bash&#10;scripts/github_actions/build_ci.bash&#10;"/>
+    </command>
+    <command Name="run check" depends="//@job.12/@command.2">
+      <tool Name="scripts/github_actions/run_check.bash &quot;$JOB_NUMBER&quot; &quot;$NUM_JOBS&quot;"/>
+    </command>
+    <command depends="//@job.12/@command.3">
+      <tool Name="actions/upload-artifact@v1"/>
+      <parameter Parameter="name: job-${{ env.JOB_NUMBER }}&#10;path: job-${{ env.JOB_NUMBER }}&#10;"/>
+    </command>
+    <ifthenelse Condition="failure()">
+      <true>
+        <command Name="print status" depends="//@job.12/@command.4">
+          <tool Name="cat test-suite.log"/>
+        </command>
+      </true>
+    </ifthenelse>
+  </job>
+  <job Name="test_only_ci">
+    <tool Name="ubuntu-latest"/>
+    <command>
+      <tool Name="actions/checkout@v3"/>
+    </command>
+    <command Name="cache-dependencies" depends="//@job.13/@command.0">
+      <tool Name="actions/cache@v3"/>
+      <parameter Parameter="path: dependencies&#10;key: swupd-dependencies&#10;"/>
+    </command>
+    <command Name="build_dep" depends="//@job.13/@command.1">
+      <tool Name="scripts/github_actions/build_ci_dependencies.bash"/>
+    </command>
+    <command Name="build" depends="//@job.13/@command.2">
+      <tool Name="scripts/github_actions/build_ci.bash"/>
+    </command>
+    <command Name="run check slow" depends="//@job.13/@command.3">
+      <tool Name="FILES=&quot;$(find test/functional/only_in_ci_slow/ -name &quot;*.bats&quot;)&quot;&#10;env TESTS=&quot;$(echo $FILES)&quot; make -e -j10 check&#10;echo &quot;$FILES&quot; &gt;&gt; job-only-ci&#10;"/>
+    </command>
+    <command Name="run check system" depends="//@job.13/@command.4">
+      <tool Name="FILES=&quot;$(find test/functional/only_in_ci_system/ -name &quot;*.bats&quot;)&quot;&#10;env TESTS=&quot;$(echo $FILES)&quot; make -e -j1 check&#10;echo &quot;$FILES&quot; &gt;&gt; job-only-ci&#10;"/>
+    </command>
+    <command depends="//@job.13/@command.5">
+      <tool Name="actions/upload-artifact@v1"/>
+      <parameter Parameter="name: job-only-ci&#10;path: job-only-ci&#10;"/>
+    </command>
+    <ifthenelse Condition="failure()">
+      <true>
+        <command Name="print status" depends="//@job.13/@command.6">
+          <tool Name="cat test-suite.log"/>
+        </command>
+      </true>
+    </ifthenelse>
+  </job>
+  <job Name="test_successful">
+    <tool Name="ubuntu-latest"/>
+    <command>
+      <tool Name="actions/checkout@v3"/>
+    </command>
+    <command depends="//@job.14/@command.0">
+      <tool Name="actions/download-artifact@v1"/>
+      <parameter Parameter="name: job-1&#10;path: jobs/&#10;"/>
+    </command>
+    <command depends="//@job.14/@command.1">
+      <tool Name="actions/download-artifact@v1"/>
+      <parameter Parameter="name: job-2&#10;path: jobs/&#10;"/>
+    </command>
+    <command depends="//@job.14/@command.2">
+      <tool Name="actions/download-artifact@v1"/>
+      <parameter Parameter="name: job-3&#10;path: jobs/&#10;"/>
+    </command>
+    <command depends="//@job.14/@command.3">
+      <tool Name="actions/download-artifact@v1"/>
+      <parameter Parameter="name: job-4&#10;path: jobs/&#10;"/>
+    </command>
+    <command depends="//@job.14/@command.4">
+      <tool Name="actions/download-artifact@v1"/>
+      <parameter Parameter="name: job-5&#10;path: jobs/&#10;"/>
+    </command>
+    <command depends="//@job.14/@command.5">
+      <tool Name="actions/download-artifact@v1"/>
+      <parameter Parameter="name: job-6&#10;path: jobs/&#10;"/>
+    </command>
+    <command depends="//@job.14/@command.6">
+      <tool Name="actions/download-artifact@v1"/>
+      <parameter Parameter="name: job-7&#10;path: jobs/&#10;"/>
+    </command>
+    <command depends="//@job.14/@command.7">
+      <tool Name="actions/download-artifact@v1"/>
+      <parameter Parameter="name: job-8&#10;path: jobs/&#10;"/>
+    </command>
+    <command depends="//@job.14/@command.8">
+      <tool Name="actions/download-artifact@v1"/>
+      <parameter Parameter="name: job-9&#10;path: jobs/&#10;"/>
+    </command>
+    <command depends="//@job.14/@command.9">
+      <tool Name="actions/download-artifact@v1"/>
+      <parameter Parameter="name: job-10&#10;path: jobs/&#10;"/>
+    </command>
+    <command depends="//@job.14/@command.10">
+      <tool Name="actions/download-artifact@v1"/>
+      <parameter Parameter="name: job-only-ci&#10;path: jobs/&#10;"/>
+    </command>
+    <command Name="Successful" depends="//@job.14/@command.11">
+      <tool Name="find test/functional/ -name &quot;*.bats&quot; | sort -u &gt; all_tests&#10;cat jobs/job-* | sort -u &gt; run_tests&#10;diff -u all_tests run_tests&#10;"/>
+    </command>
+  </job>
+</devops2:Pipeline>

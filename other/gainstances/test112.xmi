@@ -1,0 +1,14 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="Greetings" xmi:version="2.0">
+  <when Trigger="pull_request_target: null&#10;"/>
+  <when Trigger="issues: null&#10;"/>
+  <job Name="greeting">
+    <permission Key="issues" Value="write"/>
+    <permission Key="pull-requests" Value="write"/>
+    <tool Name="ubuntu-latest"/>
+    <command>
+      <tool Name="actions/first-interaction@v1"/>
+      <parameter Parameter="repo-token: ${{ secrets.GITHUB_TOKEN }}&#10;issue-message: Message that will be displayed on users' first issue&#10;pr-message: Message that will be displayed on users' first pull request&#10;"/>
+    </command>
+  </job>
+</devops2:Pipeline>

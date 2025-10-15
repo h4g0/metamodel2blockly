@@ -1,0 +1,75 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="C/C++ CI" xmi:version="2.0">
+  <when Trigger="push: null&#10;"/>
+  <environment Key="concurrency" Value="group: environment-${{ github.head_ref }}&#10;cancel-in-progress: true&#10;"/>
+  <job Name="build-linux">
+    <tool Name="ubuntu-22.04"/>
+    <command>
+      <tool Name="actions/checkout@v2"/>
+      <parameter Parameter="repository: davidgiven/fluxengine&#10;path: fluxengine&#10;"/>
+    </command>
+    <command depends="//@job.0/@command.0">
+      <tool Name="actions/checkout@v2"/>
+      <parameter Parameter="repository: davidgiven/fluxengine-testdata&#10;path: fluxengine-testdata&#10;"/>
+    </command>
+    <command Name="apt" depends="//@job.0/@command.1">
+      <tool Name="sudo apt install libudev-dev libsqlite3-dev protobuf-compiler libwxgtk3.0-gtk3-dev libfmt-dev libprotobuf-dev wx-common&#10;"/>
+    </command>
+    <command Name="make" depends="//@job.0/@command.2">
+      <tool Name="CXXFLAGS=&quot;-Wp,-D_GLIBCXX_ASSERTIONS&quot; make -j`nproc` -C fluxengine"/>
+    </command>
+  </job>
+  <job Name="build-macos-current">
+    <tool Name="macos-latest"/>
+    <command>
+      <tool Name="actions/checkout@v2"/>
+      <parameter Parameter="repository: davidgiven/fluxengine&#10;path: fluxengine&#10;"/>
+    </command>
+    <command depends="//@job.1/@command.0">
+      <tool Name="actions/checkout@v2"/>
+      <parameter Parameter="repository: davidgiven/fluxengine-testdata&#10;path: fluxengine-testdata&#10;"/>
+    </command>
+    <command Name="brew" depends="//@job.1/@command.1">
+      <tool Name="brew install sqlite pkg-config libusb protobuf wxwidgets fmt make coreutils dylibbundler libjpeg"/>
+    </command>
+    <command Name="make" depends="//@job.1/@command.2">
+      <tool Name="gmake -j`nproc` -C fluxengine"/>
+    </command>
+    <command Name="Upload build artifacts" depends="//@job.1/@command.3">
+      <tool Name="actions/upload-artifact@v2"/>
+      <parameter Parameter="name: ${{ github.event.repository.name }}.${{ github.sha }}&#10;path: fluxengine/FluxEngine.pkg&#10;"/>
+    </command>
+  </job>
+  <job Name="build-windows">
+    <tool Name="windows-latest"/>
+    <tool Name="defaults:&#10;    run:&#10;        shell: msys2 {0}&#10;"/>
+    <command>
+      <tool Name="msys2/setup-msys2@v2"/>
+      <parameter Parameter="update: true&#10;msystem: MINGW32&#10;install: diffutils make mingw-w64-i686-binutils mingw-w64-i686-fmt mingw-w64-i686-gcc&#10;    mingw-w64-i686-libusb mingw-w64-i686-nsis mingw-w64-i686-pkg-config mingw-w64-i686-protobuf&#10;    mingw-w64-i686-python mingw-w64-i686-sqlite3 mingw-w64-i686-wxWidgets mingw-w64-i686-zlib&#10;    mingw-w64-i686-imagemagick vim zip&#10;"/>
+    </command>
+    <command Name="update-protobuf" depends="//@job.2/@command.0">
+      <tool Name="pacman -U --noconfirm https://repo.msys2.org/mingw/mingw32/mingw-w64-i686-protobuf-21.9-1-any.pkg.tar.zst&#10;"/>
+    </command>
+    <command depends="//@job.2/@command.1">
+      <tool Name="actions/checkout@v2"/>
+      <parameter Parameter="repository: davidgiven/fluxengine&#10;path: fluxengine&#10;"/>
+    </command>
+    <command depends="//@job.2/@command.2">
+      <tool Name="actions/checkout@v2"/>
+      <parameter Parameter="repository: davidgiven/fluxengine-testdata&#10;path: fluxengine-testdata&#10;"/>
+    </command>
+    <command Name="build" depends="//@job.2/@command.3">
+      <tool Name="MAGICK_TIME_LIMIT=100 make -j`nproc` -C fluxengine"/>
+    </command>
+    <command Name="nsis" depends="//@job.2/@command.4">
+      <tool Name="cd fluxengine&#10;strip fluxengine.exe -o fluxengine-stripped.exe&#10;strip fluxengine-gui.exe -o fluxengine-gui-stripped.exe&#10;makensis -v2 -nocd -dOUTFILE=fluxengine-installer.exe extras/windows-installer.nsi&#10;"/>
+    </command>
+    <command Name="zip" depends="//@job.2/@command.5">
+      <tool Name="cd fluxengine&#10;zip -9 fluxengine-windows.zip fluxengine.exe fluxengine-gui.exe upgrade-flux-file.exe brother120tool.exe brother240tool.exe FluxEngine.cydsn/CortexM3/ARM_GCC_541/Release/FluxEngine.hex fluxengine-installer.exe&#10;"/>
+    </command>
+    <command Name="Upload build artifacts" depends="//@job.2/@command.6">
+      <tool Name="actions/upload-artifact@v2"/>
+      <parameter Parameter="name: ${{ github.event.repository.name }}.${{ github.sha }}&#10;path: fluxengine/fluxengine-windows.zip&#10;"/>
+    </command>
+  </job>
+</devops2:Pipeline>

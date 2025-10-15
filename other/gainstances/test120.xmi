@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="Labeler" xmi:version="2.0">
+  <when Trigger="pull_request: null&#10;"/>
+  <job Name="label">
+    <tool Name="ubuntu-latest"/>
+    <command>
+      <tool Name="actions/labeler@v2"/>
+      <parameter Parameter="repo-token: ${{ secrets.GITHUB_TOKEN }}&#10;"/>
+    </command>
+  </job>
+</devops2:Pipeline>

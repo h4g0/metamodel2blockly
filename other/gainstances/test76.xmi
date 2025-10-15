@@ -1,0 +1,32 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="Tests" xmi:version="2.0">
+  <tool Name="defaults:&#10;    run:&#10;        shell: bash -l {0}&#10;"/>
+  <when Trigger="push:&#10;    branches:&#10;    - master&#10;"/>
+  <when Trigger="pull_request:&#10;    branches:&#10;    - master&#10;"/>
+  <job Name="run">
+    <tool Name="${{ matrix.os }}"/>
+    <tool Name="strategy:&#10;    fail-fast: false&#10;    matrix:&#10;        os:&#10;        - ubuntu-latest&#10;        - macos-latest&#10;        python-version:&#10;        - 3.8&#10;"/>
+    <command>
+      <tool Name="actions/checkout@v2"/>
+    </command>
+    <command Name="Setup conda" depends="//@job.0/@command.0">
+      <tool Name="mamba-org/setup-micromamba@v1"/>
+      <parameter Parameter="environment-file: environment-dev.yml&#10;condarc: &quot;dependencies:\n  - python==${{ matrix.python-version }}\n&quot;&#10;"/>
+    </command>
+    <command Name="Install ipyleaflet" depends="//@job.0/@command.1">
+      <tool Name="pip install . --no-deps"/>
+    </command>
+    <command Name="Check installation files" depends="//@job.0/@command.2">
+      <tool Name="test -d $CONDA_PREFIX/share/jupyter/nbextensions/jupyter-leaflet&#10;test -f $CONDA_PREFIX/share/jupyter/nbextensions/jupyter-leaflet/extension.js&#10;test -f $CONDA_PREFIX/share/jupyter/nbextensions/jupyter-leaflet/index.js&#10;test -d $CONDA_PREFIX/share/jupyter/labextensions/jupyter-leaflet&#10;test -f $CONDA_PREFIX/share/jupyter/labextensions/jupyter-leaflet/package.json&#10;"/>
+    </command>
+    <command Name="Python Linters" depends="//@job.0/@command.3">
+      <tool Name="flake8 ipyleaflet --ignore=E501,E731"/>
+    </command>
+    <command Name="JS Linters" depends="//@job.0/@command.4">
+      <tool Name="yarn install&#10;yarn run lint:check&#10;"/>
+    </command>
+    <command Name="Import check" depends="//@job.0/@command.5">
+      <tool Name="python -c 'import ipyleaflet'"/>
+    </command>
+  </job>
+</devops2:Pipeline>

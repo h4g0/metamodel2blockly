@@ -1,0 +1,49 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="Release" xmi:version="2.0">
+  <when Trigger="release:&#10;    types:&#10;    - released&#10;"/>
+  <environment Key="concurrency" Value="group: release&#10;cancel-in-progress: false&#10;"/>
+  <job Name="release">
+    <tool Name="ubuntu-latest"/>
+    <tool Name="container:&#10;    image: danielflook/python-minifier-build:python3.11-2022-10-25&#10;"/>
+    <command Name="Checkout">
+      <tool Name="actions/checkout@v3"/>
+    </command>
+    <command Name="Set version statically" depends="//@job.0/@command.0">
+      <tool Name="VERSION=${{ github.event.release.tag_name }}&#10;sed -i &quot;s/setup_requires=.*/version='$VERSION',/; s/use_scm_version=.*//&quot; setup.py&#10;"/>
+    </command>
+    <command Name="Build package" depends="//@job.0/@command.1">
+      <tool Name="pip3 install --upgrade setuptools wheel&#10;python3 setup.py sdist bdist_wheel --universal&#10;"/>
+    </command>
+    <command depends="//@job.0/@command.2">
+      <tool Name="actions/upload-artifact@v3"/>
+      <parameter Parameter="name: dist&#10;path: dist/&#10;if-no-files-found: error&#10;"/>
+    </command>
+    <command Name="Build documentation" depends="//@job.0/@command.3">
+      <tool Name="pip3 install sphinx sphinxcontrib-programoutput sphinx_rtd_theme&#10;pip3 install dist/*.tar.gz&#10;sphinx-build docs/source /tmp/build&#10;"/>
+    </command>
+    <command depends="//@job.0/@command.4">
+      <tool Name="actions/upload-pages-artifact@v1"/>
+      <parameter Parameter="path: /tmp/build&#10;"/>
+    </command>
+  </job>
+  <job Name="publish-to-pypi" depends="//@job.0">
+    <permission Key="id-token" Value="write"/>
+    <tool Name="ubuntu-latest"/>
+    <command>
+      <tool Name="actions/download-artifact@v3"/>
+      <parameter Parameter="name: dist&#10;path: dist/&#10;"/>
+    </command>
+    <command Name="Publish package distributions to PyPI" depends="//@job.1/@command.0">
+      <tool Name="pypa/gh-action-pypi-publish@release/v1"/>
+      <parameter Parameter="print-hash: true&#10;verbose: true&#10;"/>
+    </command>
+  </job>
+  <job Name="publish-docs" depends="//@job.0">
+    <permission Key="pages" Value="write"/>
+    <permission Key="id-token" Value="write"/>
+    <tool Name="ubuntu-latest"/>
+    <command Name="Deploy to GitHub Pages">
+      <tool Name="actions/deploy-pages@v2"/>
+    </command>
+  </job>
+</devops2:Pipeline>

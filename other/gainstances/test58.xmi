@@ -1,0 +1,52 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="Build and deploy Go clean architecture application" xmi:version="2.0">
+  <when Trigger="push:&#10;    branches:&#10;    - BAC-*&#10;    - main&#10;    - develop&#10;    - staging&#10;    - DEVOPS-*&#10;    tags:&#10;    - v*&#10;"/>
+  <job Name="setup_environment">
+    <environment Key="GITHUB_REF" Value="${{ github.ref }}"/>
+    <tool Name="ubuntu-latest"/>
+    <command>
+      <tool Name="if grep -q &quot;refs/tags/v&quot; &lt;&lt;&lt; $GITHUB_REF; then&#10;  echo &quot;::set-output name=env::PROD&quot;&#10;elif  grep -q &quot;refs/heads/staging&quot; &lt;&lt;&lt; ${{github.ref}}; then&#10;  echo &quot;::set-output name=env::STAGING&quot;&#10;else&#10;  echo &quot;::set-output name=env::DEV&quot;&#10;fi&#10;"/>
+    </command>
+    <command Name="Print environment" depends="//@job.0/@command.0">
+      <tool Name="echo  &quot;Environment :- ${{ steps.get_env.outputs.env }}&quot;"/>
+    </command>
+  </job>
+  <job Name="build_and_deploy" depends="//@job.0">
+    <tool Name="ubuntu-latest"/>
+    <command>
+      <tool Name="actions/checkout@v3"/>
+    </command>
+    <command Name="Use golang ${{matrix.go-version}}" depends="//@job.1/@command.0">
+      <tool Name="actions/setup-go@v3"/>
+      <parameter Parameter="go-version: ^1.18&#10;"/>
+    </command>
+    <command depends="//@job.1/@command.1">
+      <tool Name="go version"/>
+    </command>
+    <command Name="Perform linting (golangci-lint)" depends="//@job.1/@command.2">
+      <tool Name="golangci/golangci-lint-action@v2"/>
+      <parameter Parameter="skip-go-installation: true&#10;args: --timeout=10m&#10;"/>
+    </command>
+    <command Name="Set up MySQL" depends="//@job.1/@command.3">
+      <tool Name="sudo systemctl start mysql&#10;mysql -e 'CREATE DATABASE clean_architecture;' -uroot -proot&#10;mysql -e &quot;show databases;&quot; -uroot -proot&#10;"/>
+    </command>
+    <command Name="Initialize the environment variables for testing" depends="//@job.1/@command.4">
+      <tool Name="echo &quot;ENVIRONMENT=local&#10;SERVER_PORT=8080&#10;DB_HOST=localhost&#10;DB_PORT=3306&#10;DB_NAME=clean_architecture&#10;DB_USER=root&#10;DB_PASS=root&#10;DEBUG_PORT=5002     &#10;DB_TYPE=mysql&#10;STORAGE_BUCKET_NAME=${{secrets.STORAGE_BUCKET_NAME}}&#10;&quot; &gt; .env&#10;"/>
+    </command>
+    <command Name="Initialize service account key file" depends="//@job.1/@command.5">
+      <tool Name="echo ${{secrets.FIREBASE_SERVICE_ACCOUNT_KEY_BASE64}} | base64 --decode &gt; serviceAccountKey.json&#10;"/>
+    </command>
+    <command Name="Build the repository" depends="//@job.1/@command.6">
+      <tool Name="go build main.go"/>
+    </command>
+    <command Name="Start the service" depends="//@job.1/@command.7">
+      <tool Name="./main app:serve &amp;&#10;"/>
+    </command>
+    <command Name="Validate if the service is working or not via health check api" depends="//@job.1/@command.8">
+      <tool Name="sleep 5&#10;curl http://localhost:8080/health-check&#10;"/>
+    </command>
+    <command Name="Initialize the environment variables with deployment env" depends="//@job.1/@command.9">
+      <tool Name="rm -rf .env&#10;echo &quot;ENVIRONMENT=${{secrets.ENVIRONMENT}}&#10;SERVER_PORT=8080&#10;DB_HOST=${{secrets.DB_HOST}}&#10;DB_PORT=${{secrets.DB_PORT}}&#10;DB_NAME=${{secrets.DB_NAME}}&#10;DB_USER=${{secrets.DB_USER}}&#10;DB_PASS=${{secrets.DB_PASS}}&#10;DB_TYPE=${{secrets.DB_TYPE}}&#10;STORAGE_BUCKET_NAME=${{secrets.STORAGE_BUCKET_NAME}}&#10;DEBUG_PORT=5002     &#10;&quot; &gt; .env&#10;"/>
+    </command>
+  </job>
+</devops2:Pipeline>

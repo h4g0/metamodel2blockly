@@ -1,0 +1,29 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="" xmi:version="2.0">
+  <tool Name="language: objective-c&#10;"/>
+  <tool Name="osx_image: xcode10&#10;"/>
+  <tool Name="cache: cocoapods&#10;"/>
+  <tool Name="podfile: Example/Podfile&#10;"/>
+  <job Name="before_install">
+    <command Name="">
+      <tool Name="pod install --repo-update --project-directory=Example"/>
+    </command>
+  </job>
+  <job Name="script">
+    <command Name="">
+      <tool Name="xcodebuild clean -workspace Example/VEditorKit.xcworkspace -scheme VEditorKit"/>
+    </command>
+    <command Name="" depends="//@job.1/@command.0">
+      <tool Name="xcodebuild -list -sdk iphonesimulator -workspace Example/VEditorKit.xcworkspace -scheme VEditorKit"/>
+    </command>
+    <command Name="" depends="//@job.1/@command.1">
+      <tool Name="xcodebuild build test -sdk iphonesimulator -workspace Example/VEditorKit.xcworkspace -destination 'platform=iOS Simulator,name=iPhone 6,OS=12.0' -scheme VEditorKit-Example CODE_SIGNING_REQUIRED=NO | xcpretty"/>
+    </command>
+  </job>
+  <job Name="after_success">
+    <command Name="">
+      <tool Name="bash &lt;(curl -s https://codecov.io/bash)"/>
+    </command>
+  </job>
+  <when Trigger="only:&#10;- master&#10;"/>
+</devops2:Pipeline>

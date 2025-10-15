@@ -1,0 +1,21 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="" xmi:version="2.0">
+  <tool Name="language: node_js&#10;"/>
+  <tool Name="node_js:&#10;- v12&#10;- v11&#10;- v10&#10;- v9&#10;- v8&#10;"/>
+  <job Name="install">
+    <command Name="">
+      <tool Name="npm install"/>
+    </command>
+    <command Name="" depends="//@job.0/@command.0">
+      <tool Name="npm install -g codecov"/>
+    </command>
+  </job>
+  <job Name="script">
+    <command Name="">
+      <tool Name="npm run test-cov"/>
+    </command>
+    <command Name="" depends="//@job.1/@command.0">
+      <tool Name="codecov"/>
+    </command>
+  </job>
+</devops2:Pipeline>

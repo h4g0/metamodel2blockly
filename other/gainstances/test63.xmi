@@ -1,0 +1,35 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="Azure Static Web Apps CI/CD" xmi:version="2.0">
+  <when Trigger="push:&#10;    branches:&#10;    - main&#10;"/>
+  <when Trigger="pull_request:&#10;    types:&#10;    - opened&#10;    - synchronize&#10;    - reopened&#10;    - closed&#10;    branches:&#10;    - main&#10;"/>
+  <job Name="build_and_deploy_job">
+    <tool Name="ubuntu-latest"/>
+    <ifthenelse Condition="github.event_name == 'push' || (github.event_name == 'pull_request' &amp;&amp; github.event.action != 'closed')">
+      <true>
+        <command>
+          <tool Name="actions/checkout@v2"/>
+          <parameter Parameter="submodules: true&#10;"/>
+        </command>
+      </true>
+    </ifthenelse>
+    <ifthenelse Condition="github.event_name == 'push' || (github.event_name == 'pull_request' &amp;&amp; github.event.action != 'closed')">
+      <true>
+        <command Name="Build And Deploy" depends="//@job.0/@ifthenelse.0/@true/@command.0">
+          <tool Name="Azure/static-web-apps-deploy@v1"/>
+          <parameter Parameter="azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_JOLLY_COAST_0BFDAF303&#10;    }}&#10;repo_token: ${{ secrets.GITHUB_TOKEN }}&#10;action: upload&#10;app_location: /&#10;api_location: ''&#10;output_location: build&#10;"/>
+        </command>
+      </true>
+    </ifthenelse>
+  </job>
+  <job Name="close_pull_request_job">
+    <tool Name="ubuntu-latest"/>
+    <ifthenelse Condition="github.event_name == 'pull_request' &amp;&amp; github.event.action == 'closed'">
+      <true>
+        <command Name="Close Pull Request">
+          <tool Name="Azure/static-web-apps-deploy@v1"/>
+          <parameter Parameter="azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_JOLLY_COAST_0BFDAF303&#10;    }}&#10;action: close&#10;"/>
+        </command>
+      </true>
+    </ifthenelse>
+  </job>
+</devops2:Pipeline>

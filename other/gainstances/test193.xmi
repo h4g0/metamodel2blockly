@@ -1,0 +1,23 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="CodeCov" xmi:version="2.0">
+  <when Trigger="push: null&#10;"/>
+  <job Name="run">
+    <environment Key="OS" Value="ubuntu-latest"/>
+    <environment Key="PYTHON" Value="3.9"/>
+    <tool Name="ubuntu-latest"/>
+    <command>
+      <tool Name="actions/checkout@master"/>
+    </command>
+    <command Name="Setup Python" depends="//@job.0/@command.0">
+      <tool Name="actions/setup-python@master"/>
+      <parameter Parameter="python-version: 3.9&#10;"/>
+    </command>
+    <command Name="generate report" depends="//@job.0/@command.1">
+      <tool Name="pip install coverage coincurve tlv8 cryptography click&#10;pip install -e .&#10;coverage run -m unittest&#10;"/>
+    </command>
+    <command Name="Upload coverage to Codecov" depends="//@job.0/@command.2">
+      <tool Name="codecov/codecov-action@v1"/>
+      <parameter Parameter="flags: unittests&#10;fail_ci_if_error: true&#10;"/>
+    </command>
+  </job>
+</devops2:Pipeline>

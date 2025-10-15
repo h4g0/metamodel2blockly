@@ -1,0 +1,17 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="Release new hfinger version" xmi:version="2.0">
+  <when Trigger="release:&#10;    types:&#10;    - published&#10;"/>
+  <job Name="release_pypi">
+    <tool Name="ubuntu-latest"/>
+    <command>
+      <tool Name="actions/checkout@v3"/>
+    </command>
+    <command Name="Build package" depends="//@job.0/@command.0">
+      <tool Name="pip3 install setuptools wheel&#10;python3 setup.py bdist_wheel&#10;"/>
+    </command>
+    <command Name="Publish to PyPi" depends="//@job.0/@command.1">
+      <tool Name="pypa/gh-action-pypi-publish@release/v1"/>
+      <parameter Parameter="user: __token__&#10;password: ${{ secrets.pypi_password }}&#10;"/>
+    </command>
+  </job>
+</devops2:Pipeline>

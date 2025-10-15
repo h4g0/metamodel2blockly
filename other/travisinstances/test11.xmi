@@ -1,0 +1,53 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="" xmi:version="2.0">
+  <tool Name="language: scala&#10;"/>
+  <tool Name="scala:&#10;- 2.13.1&#10;"/>
+  <tool Name="jdk:&#10;- openjdk11&#10;"/>
+  <tool Name="jobs:&#10;    include:&#10;    -   os: linux&#10;    -   os: osx&#10;    -   os: windows&#10;        language: shell&#10;        env: NATIVE_IMAGE_PATH=&quot;C:/Program Files/GraalVM/graalvm-ce-java11-21.0.0.2/bin/native-image.cmd&quot;&#10;"/>
+  <job Name="before_install">
+    <command Name="">
+      <tool Name="case $TRAVIS_OS_NAME in&#10;  windows)&#10;    choco install graalvm sbt&#10;    eval $(powershell -NonInteractive -Command 'write(&quot;export PATH=`&quot;&quot; + ([Environment]::GetEnvironmentVariable(&quot;PATH&quot;,&quot;Machine&quot;) + &quot;;&quot; + [Environment]::GetEnvironmentVariable(&quot;PATH&quot;,&quot;User&quot;)).replace(&quot;\&quot;,&quot;/&quot;).replace(&quot;C:&quot;,&quot;/c&quot;).replace(&quot;;&quot;,&quot;:&quot;) + &quot;:`$PATH`&quot;&quot;)')&#10;    ;;&#10;esac"/>
+    </command>
+  </job>
+  <job Name="install">
+    <command Name="">
+      <tool Name="case $TRAVIS_OS_NAME in&#10;  windows)&#10;    gu.cmd install native-image&#10;    ;;&#10;esac"/>
+    </command>
+  </job>
+  <job Name="script">
+    <command Name="">
+      <tool Name="case $TRAVIS_OS_NAME in&#10;  windows)&#10;    sbt test&#10;    ./scripts/windows.bat&#10;    ;;&#10;  *)&#10;    sbt test &#10;    sbt &quot;nativeImage&quot;&#10;    ;;&#10;esac"/>
+    </command>
+  </job>
+  <job Name="before_deploy">
+    <command Name="">
+      <tool Name="./scripts/release.sh"/>
+    </command>
+  </job>
+  <job Name="deploy">
+    <command Name="">
+      <tool Name="provider"/>
+      <parameter Parameter="releases"/>
+    </command>
+    <command Name="" depends="//@job.4/@command.0">
+      <tool Name="skip_cleanup"/>
+      <parameter Parameter="true&#10;...&#10;"/>
+    </command>
+    <command Name="" depends="//@job.4/@command.1">
+      <tool Name="api_key"/>
+      <parameter Parameter="secure: hh2IBMCwL3F6Ku3ThlahCX72SiHMlobIwH6uqfbMZzBCgOyDwFUsad8L4ktCqZABY5sUzfzIx3Pe6aGy4owfjqVm10nODOU4HA6kcCJrnHPkonySh6wASqjOiw9rHOty6p2Sn7Urqx1Ox/CHGgKMGKCcxBujwcN/4uPu1vCeTCEE1V5rFLaLmhT8bHFV2JjCpEEkRQmoPgTfJwJsNKnblw4A0z3weD7BNuiBXmQLBkdP1fUna+a1++WkWEIAybjqFEtVinfuJVQWCaL2MAfS5qCefrga7/nmP0AAKJPVc65YpGC1osTibm00vLnqE7wgXZT38xVjIdwzlnGBjnsoIJGiVLBAPDlg+kUcfuXQoi94JQQ9/0A0vADhra1WQeaf7a2m/bhpmHvq6VnY2X3nLqOZVkylkiE019y0xZ+qQc7uOT8b+zX3zWMrqrUJ/d/u2a2Iotd81WCdVuSY1fVX7GT+rqfDshwWPvSu9FNcrMSC11Nv9hIB6i8BfPKJo8l0SIJeEgyaXnNaznf+vO1KNJYYBijKEZmeVdHtbvUOH7ze60KnlgVTF/wmcE2JVJTtpRBQL1SDH2KkF8I+L1CfwdhylsNRoW93sMJBLFJG2lHEfZlAd4WV7ekKnuigHYI+pd5tDE5a+A1ASnm1vwR096Bz//1crtBJCjuawH/hikQ=&#10;"/>
+    </command>
+    <command Name="" depends="//@job.4/@command.2">
+      <tool Name="file"/>
+      <parameter Parameter="release/*"/>
+    </command>
+    <command Name="" depends="//@job.4/@command.3">
+      <tool Name="file_glob"/>
+      <parameter Parameter="true&#10;...&#10;"/>
+    </command>
+    <command Name="" depends="//@job.4/@command.4">
+      <tool Name="True"/>
+      <parameter Parameter="tags: true&#10;"/>
+    </command>
+  </job>
+</devops2:Pipeline>

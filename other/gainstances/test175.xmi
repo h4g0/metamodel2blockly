@@ -1,0 +1,30 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="Checks" xmi:version="2.0">
+  <when Trigger="push:&#10;    branches:&#10;    - main&#10;"/>
+  <when Trigger="pull_request:&#10;    branches:&#10;    - main&#10;"/>
+  <environment Key="PYTHON_VERSION" Value="3.10"/>
+  <environment Key="POETRY_VERSION" Value="1.2.1"/>
+  <job Name="check">
+    <tool Name="ubuntu-latest"/>
+    <command Name="Checkout code">
+      <tool Name="actions/checkout@v3"/>
+    </command>
+    <command Name="Install Poetry" depends="//@job.0/@command.0">
+      <tool Name="snok/install-poetry@v1"/>
+      <parameter Parameter="version: ${{ env.POETRY_VERSION }}&#10;"/>
+    </command>
+    <command Name="Set up Python ${{ env.PYTHON_VERSION }}" depends="//@job.0/@command.1">
+      <tool Name="actions/setup-python@v4"/>
+      <parameter Parameter="python-version: ${{ env.PYTHON_VERSION }}&#10;cache: poetry&#10;"/>
+    </command>
+    <command Name="Install prerequisites" depends="//@job.0/@command.2">
+      <tool Name="sudo apt install -y portaudio19-dev python3-pyaudio&#10;"/>
+    </command>
+    <command Name="Install dependencies" depends="//@job.0/@command.3">
+      <tool Name="poetry install&#10;"/>
+    </command>
+    <command Name="Run checks" depends="//@job.0/@command.4">
+      <tool Name="echo &quot;Checking imports order&quot;&#10;poetry run isort . --check-only&#10;echo &quot;Checking black codestyle&quot;&#10;poetry run black . --check&#10;echo &quot;Linting code&quot;&#10;poetry run flake8 . --count&#10;"/>
+    </command>
+  </job>
+</devops2:Pipeline>

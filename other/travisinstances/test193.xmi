@@ -1,0 +1,38 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="" xmi:version="2.0">
+  <tool Name="language: python&#10;"/>
+  <tool Name="python: '2.7'&#10;"/>
+  <tool Name="sudo: required&#10;"/>
+  <tool Name="dist: trusty&#10;"/>
+  <tool Name="services:&#10;- docker&#10;"/>
+  <tool Name="notifications:&#10;    webhooks: https://galaxy.ansible.com/api/v1/notifications/&#10;"/>
+  <job Name="env">
+    <command Name="">
+      <tool Name="matrix"/>
+      <parameter Parameter="- IMAGE_NAME=&quot;ubuntu-upstart:14.04&quot;&#10;- IMAGE_NAME=&quot;ubuntu:16.04-builded&quot;&#10;- IMAGE_NAME=&quot;debian:8-builded&quot;&#10;- IMAGE_NAME=&quot;debian:9-builded&quot;&#10;- IMAGE_NAME=&quot;centos:7-builded&quot;&#10;- IMAGE_NAME=&quot;centos:6-builded&quot;&#10;"/>
+    </command>
+  </job>
+  <job Name="install">
+    <command Name="">
+      <tool Name="pip install ansible==&quot;2.4.2.0&quot; docker-py"/>
+    </command>
+    <command Name="" depends="//@job.1/@command.0">
+      <tool Name="ln -s ${PWD} tests/docker/ANXS.postgresql"/>
+    </command>
+  </job>
+  <job Name="script">
+    <command Name="">
+      <tool Name="ansible-playbook -i tests/docker/hosts -e image_name=${IMAGE_NAME} tests/docker/site.yml --syntax-check"/>
+    </command>
+    <command Name="" depends="//@job.2/@command.0">
+      <tool Name="ansible-playbook -i tests/docker/hosts -e image_name=${IMAGE_NAME} tests/docker/site.yml"/>
+    </command>
+    <command Name="" depends="//@job.2/@command.1">
+      <tool Name="ansible-playbook -i tests/docker/hosts -e image_name=${IMAGE_NAME} tests/docker/site.yml &gt; idempotence_out"/>
+    </command>
+    <command Name="" depends="//@job.2/@command.2">
+      <tool Name="./tests/idempotence_check.sh idempotence_out"/>
+    </command>
+  </job>
+  <environment Key="matrix" Value="matrix"/>
+</devops2:Pipeline>

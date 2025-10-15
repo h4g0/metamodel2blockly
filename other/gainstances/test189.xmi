@@ -1,0 +1,111 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="CI" xmi:version="2.0">
+  <when Trigger="push: null&#10;"/>
+  <when Trigger="pull_request: null&#10;"/>
+  <when Trigger="workflow_dispatch: null&#10;"/>
+  <when Trigger="release:&#10;    types:&#10;    - published&#10;"/>
+  <environment Key="PROJECT_TYPE" Value="KEXT"/>
+  <environment Key="ACID32" Value="1"/>
+  <job Name="build">
+    <environment Key="JOB_TYPE" Value="BUILD"/>
+    <tool Name="macos-latest"/>
+    <command>
+      <tool Name="actions/checkout@v3"/>
+    </command>
+    <command depends="//@job.0/@command.0">
+      <tool Name="actions/checkout@v3"/>
+      <parameter Parameter="repository: acidanthera/MacKernelSDK&#10;path: MacKernelSDK&#10;"/>
+    </command>
+    <command Name="CI Bootstrap" depends="//@job.0/@command.1">
+      <tool Name="src=$(/usr/bin/curl -Lfs https://raw.githubusercontent.com/acidanthera/ocbuild/master/ci-bootstrap.sh) &amp;&amp; eval &quot;$src&quot; || exit 1&#10;"/>
+    </command>
+    <command Name="Lilu Bootstrap" depends="//@job.0/@command.2">
+      <tool Name="src=$(/usr/bin/curl -Lfs https://raw.githubusercontent.com/acidanthera/Lilu/master/Lilu/Scripts/bootstrap.sh) &amp;&amp; eval &quot;$src&quot; || exit 1&#10;"/>
+    </command>
+    <command depends="//@job.0/@command.3">
+      <tool Name="xcodebuild -jobs 1 -target Package -configuration Debug -arch ACID32 -arch x86_64"/>
+    </command>
+    <command depends="//@job.0/@command.4">
+      <tool Name="xcodebuild -jobs 1 -target Package -configuration Release -arch ACID32 -arch x86_64"/>
+    </command>
+    <command Name="Upload to Artifacts" depends="//@job.0/@command.5">
+      <tool Name="actions/upload-artifact@v3"/>
+      <parameter Parameter="name: Artifacts&#10;path: build/*/*.zip&#10;"/>
+    </command>
+    <ifthenelse Condition="github.event_name == 'release'">
+      <true>
+        <command Name="Upload to Release" depends="//@job.0/@command.6">
+          <tool Name="svenstaro/upload-release-action@e74ff71f7d8a4c4745b560a485cc5fdb9b5b999d"/>
+          <parameter Parameter="repo_token: ${{ secrets.GITHUB_TOKEN }}&#10;file: build/*/*.zip&#10;tag: ${{ github.ref }}&#10;file_glob: true&#10;"/>
+        </command>
+      </true>
+    </ifthenelse>
+  </job>
+  <job Name="analyze-clang">
+    <environment Key="JOB_TYPE" Value="ANALYZE"/>
+    <tool Name="macos-latest"/>
+    <command>
+      <tool Name="actions/checkout@v3"/>
+    </command>
+    <command depends="//@job.1/@command.0">
+      <tool Name="actions/checkout@v3"/>
+      <parameter Parameter="repository: acidanthera/MacKernelSDK&#10;path: MacKernelSDK&#10;"/>
+    </command>
+    <command Name="CI Bootstrap" depends="//@job.1/@command.1">
+      <tool Name="src=$(/usr/bin/curl -Lfs https://raw.githubusercontent.com/acidanthera/ocbuild/master/ci-bootstrap.sh) &amp;&amp; eval &quot;$src&quot; || exit 1&#10;"/>
+    </command>
+    <command Name="Lilu Bootstrap" depends="//@job.1/@command.2">
+      <tool Name="src=$(/usr/bin/curl -Lfs https://raw.githubusercontent.com/acidanthera/Lilu/master/Lilu/Scripts/bootstrap.sh) &amp;&amp; eval &quot;$src&quot; || exit 1&#10;"/>
+    </command>
+    <command depends="//@job.1/@command.3">
+      <tool Name="xcodebuild analyze -quiet -scheme Package -target Package -configuration Debug -arch ACID32 -arch x86_64 CLANG_ANALYZER_OUTPUT=plist-html CLANG_ANALYZER_OUTPUT_DIR=&quot;$(pwd)/clang-analyze&quot; &amp;&amp; [ &quot;$(find clang-analyze -name &quot;*.html&quot;)&quot; = &quot;&quot; ]"/>
+    </command>
+    <command depends="//@job.1/@command.4">
+      <tool Name="xcodebuild clean -quiet -scheme Package"/>
+    </command>
+    <command depends="//@job.1/@command.5">
+      <tool Name="xcodebuild analyze -quiet -scheme Package -target Package -configuration Release -arch ACID32 -arch x86_64 CLANG_ANALYZER_OUTPUT=plist-html CLANG_ANALYZER_OUTPUT_DIR=&quot;$(pwd)/clang-analyze&quot; &amp;&amp; [ &quot;$(find clang-analyze -name &quot;*.html&quot;)&quot; = &quot;&quot; ]"/>
+    </command>
+  </job>
+  <job Name="analyze-coverity">
+    <environment Key="JOB_TYPE" Value="COVERITY"/>
+    <tool Name="macos-latest"/>
+    <ifthenelse Condition="github.repository_owner == 'acidanthera' &amp;&amp; github.event_name != 'pull_request'">
+      <true>
+        <command>
+          <tool Name="actions/checkout@v3"/>
+        </command>
+      </true>
+    </ifthenelse>
+    <ifthenelse Condition="github.repository_owner == 'acidanthera' &amp;&amp; github.event_name != 'pull_request'">
+      <true>
+        <command depends="//@job.2/@ifthenelse.0/@true/@command.0">
+          <tool Name="actions/checkout@v3"/>
+          <parameter Parameter="repository: acidanthera/MacKernelSDK&#10;path: MacKernelSDK&#10;"/>
+        </command>
+      </true>
+    </ifthenelse>
+    <ifthenelse Condition="github.repository_owner == 'acidanthera' &amp;&amp; github.event_name != 'pull_request'">
+      <true>
+        <command Name="CI Bootstrap" depends="//@job.2/@ifthenelse.1/@true/@command.0">
+          <tool Name="src=$(/usr/bin/curl -Lfs https://raw.githubusercontent.com/acidanthera/ocbuild/master/ci-bootstrap.sh) &amp;&amp; eval &quot;$src&quot; || exit 1&#10;"/>
+        </command>
+      </true>
+    </ifthenelse>
+    <ifthenelse Condition="github.repository_owner == 'acidanthera' &amp;&amp; github.event_name != 'pull_request'">
+      <true>
+        <command Name="Lilu Bootstrap" depends="//@job.2/@ifthenelse.2/@true/@command.0">
+          <tool Name="src=$(/usr/bin/curl -Lfs https://raw.githubusercontent.com/acidanthera/Lilu/master/Lilu/Scripts/bootstrap.sh) &amp;&amp; eval &quot;$src&quot; || exit 1&#10;"/>
+        </command>
+      </true>
+    </ifthenelse>
+    <ifthenelse Condition="github.repository_owner == 'acidanthera' &amp;&amp; github.event_name != 'pull_request'">
+      <true>
+        <command Name="Run Coverity" depends="//@job.2/@ifthenelse.3/@true/@command.0">
+          <tool Name="src=$(/usr/bin/curl -Lfs https://raw.githubusercontent.com/acidanthera/ocbuild/master/coverity/covstrap.sh) &amp;&amp; eval &quot;$src&quot; || exit 1&#10;"/>
+          <parameter Parameter="COVERITY_SCAN_TOKEN: ${{ secrets.COVERITY_SCAN_TOKEN }}&#10;COVERITY_SCAN_EMAIL: ${{ secrets.COVERITY_SCAN_EMAIL }}&#10;COVERITY_BUILD_COMMAND: xcodebuild -target Package -configuration Release&#10;"/>
+        </command>
+      </true>
+    </ifthenelse>
+  </job>
+</devops2:Pipeline>

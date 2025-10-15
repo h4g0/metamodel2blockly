@@ -1,0 +1,13 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="Mark stale issues and pull requests" xmi:version="2.0">
+  <when Trigger="schedule:&#10;-   cron: 29 9 * * *&#10;"/>
+  <job Name="stale">
+    <permission Key="issues" Value="write"/>
+    <permission Key="pull-requests" Value="write"/>
+    <tool Name="ubuntu-latest"/>
+    <command>
+      <tool Name="actions/stale@v3"/>
+      <parameter Parameter="repo-token: ${{ secrets.GITHUB_TOKEN }}&#10;stale-issue-message: Stale issue message&#10;stale-pr-message: Stale pull request message&#10;stale-issue-label: no-issue-activity&#10;stale-pr-label: no-pr-activity&#10;"/>
+    </command>
+  </job>
+</devops2:Pipeline>

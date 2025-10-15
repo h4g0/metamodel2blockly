@@ -1,0 +1,5 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="" xmi:version="2.0">
+  <tool Name="language: go&#10;"/>
+  <tool Name="go:&#10;- 1.7&#10;- 1.x&#10;"/>
+</devops2:Pipeline>

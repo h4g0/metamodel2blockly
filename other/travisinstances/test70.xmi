@@ -1,0 +1,56 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="" xmi:version="2.0">
+  <tool Name="language: python&#10;"/>
+  <tool Name="python:&#10;- '3.5'&#10;- '3.6'&#10;"/>
+  <tool Name="sudo: required&#10;"/>
+  <tool Name="dist: trusty&#10;"/>
+  <job Name="env">
+    <command Name="">
+      <tool Name="RUST_VERSION=nightly"/>
+    </command>
+  </job>
+  <job Name="install">
+    <command Name="">
+      <tool Name="python -c &quot;import sysconfig; print('\n'.join(map(repr,sorted(sysconfig.get_config_vars().items()))))&quot;"/>
+    </command>
+    <command Name="" depends="//@job.1/@command.0">
+      <tool Name="mkdir ~/rust-installer"/>
+    </command>
+    <command Name="" depends="//@job.1/@command.1">
+      <tool Name="curl -sL https://static.rust-lang.org/rustup.sh -o ~/rust-installer/rustup.sh"/>
+    </command>
+    <command Name="" depends="//@job.1/@command.2">
+      <tool Name="sh ~/rust-installer/rustup.sh --prefix=~/rust --spec=$RUST_VERSION -y"/>
+    </command>
+    <command Name="" depends="//@job.1/@command.3">
+      <tool Name="export PATH=&quot;$HOME/rust/bin:$PATH&quot;"/>
+    </command>
+    <command Name="" depends="//@job.1/@command.4">
+      <tool Name="export PYTHON_LIB=$(python -c &quot;import sysconfig; print(sysconfig.get_config_var('LIBDIR'))&quot;)"/>
+    </command>
+    <command Name="" depends="//@job.1/@command.5">
+      <tool Name="find $PYTHON_LIB"/>
+    </command>
+    <command Name="" depends="//@job.1/@command.6">
+      <tool Name="export LIBRARY_PATH=&quot;$LIBRARY_PATH:$PYTHON_LIB&quot;"/>
+    </command>
+    <command Name="" depends="//@job.1/@command.7">
+      <tool Name="export LD_LIBRARY_PATH=&quot;$LD_LIBRARY_PATH:$PYTHON_LIB:$HOME/rust/lib&quot;"/>
+    </command>
+    <command Name="" depends="//@job.1/@command.8">
+      <tool Name="rustc -V"/>
+    </command>
+    <command Name="" depends="//@job.1/@command.9">
+      <tool Name="pip install --upgrade setuptools"/>
+    </command>
+    <command Name="" depends="//@job.1/@command.10">
+      <tool Name="pip install -U -r requirements-dev.txt"/>
+    </command>
+  </job>
+  <job Name="script">
+    <command Name="">
+      <tool Name="make test"/>
+    </command>
+  </job>
+  <environment Key="RUST_VERSION=nightly" Value="RUST_VERSION=nightly"/>
+</devops2:Pipeline>

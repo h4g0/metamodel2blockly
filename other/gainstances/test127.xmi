@@ -1,0 +1,255 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="Koillection CI" xmi:version="2.0">
+  <when Trigger="workflow_dispatch: null&#10;"/>
+  <when Trigger="push: null&#10;"/>
+  <when Trigger="release: null&#10;"/>
+  <job Name="security_checker">
+    <tool Name="ubuntu-latest"/>
+    <command>
+      <tool Name="actions/checkout@v4"/>
+    </command>
+    <command depends="//@job.0/@command.0">
+      <tool Name="actions/cache@v3"/>
+      <parameter Parameter="path: ~/.symfony/cache&#10;key: db&#10;"/>
+    </command>
+    <command depends="//@job.0/@command.1">
+      <tool Name="symfonycorp/security-checker-action@v5"/>
+    </command>
+  </job>
+  <job Name="doctrine_schema_validator">
+    <tool Name="ubuntu-latest"/>
+    <command>
+      <tool Name="actions/checkout@v4"/>
+    </command>
+    <command depends="//@job.1/@command.0">
+      <tool Name="shivammathur/setup-php@v2"/>
+      <parameter Parameter="php-version: 8.2&#10;extensions: ctype, fileinfo, gd, iconv, intl, json&#10;"/>
+    </command>
+    <command depends="//@job.1/@command.1">
+      <tool Name="actions/cache@v3"/>
+      <parameter Parameter="path: vendor&#10;key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}&#10;restore-keys: '${{ runner.os }}-php-&#10;&#10;    '&#10;"/>
+    </command>
+    <command depends="//@job.1/@command.2">
+      <tool Name="composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist"/>
+    </command>
+    <command depends="//@job.1/@command.3">
+      <tool Name="bin/console doctrine:schema:validate --skip-sync"/>
+    </command>
+  </job>
+  <job Name="phpunit_mysql">
+    <tool Name="ubuntu-latest"/>
+    <tool Name="strategy:&#10;    matrix:&#10;        mysql:&#10;        - 8&#10;"/>
+    <tool Name="services:&#10;    mysql:&#10;        image: mysql:${{ matrix.mysql }}&#10;        env:&#10;            MYSQL_ROOT_PASSWORD: root&#10;        ports:&#10;        - 3306:3306&#10;        options: --health-cmd=&quot;mysqladmin ping&quot; --health-interval=10s --health-timeout=5s&#10;            --health-retries=5&#10;"/>
+    <command>
+      <tool Name="actions/checkout@v4"/>
+    </command>
+    <command depends="//@job.2/@command.0">
+      <tool Name="shivammathur/setup-php@v2"/>
+      <parameter Parameter="php-version: 8.2&#10;extensions: ctype, fileinfo, gd, iconv, intl, json&#10;"/>
+    </command>
+    <command depends="//@job.2/@command.1">
+      <tool Name="actions/cache@v3"/>
+      <parameter Parameter="path: vendor&#10;key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}&#10;restore-keys: '${{ runner.os }}-php-&#10;&#10;    '&#10;"/>
+    </command>
+    <command depends="//@job.2/@command.2">
+      <tool Name="composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist"/>
+    </command>
+    <command depends="//@job.2/@command.3">
+      <tool Name="sed -i &quot;s|APP_ENV=.*|APP_ENV=test|i&quot; &quot;.env&quot;"/>
+    </command>
+    <command depends="//@job.2/@command.4">
+      <tool Name="sed -i &quot;s|DB_DRIVER=.*|DB_DRIVER=pdo_mysql|i&quot; &quot;.env&quot;"/>
+    </command>
+    <command depends="//@job.2/@command.5">
+      <tool Name="sed -i &quot;s|DB_NAME=.*|DB_NAME=koillection|i&quot; &quot;.env&quot;"/>
+    </command>
+    <command depends="//@job.2/@command.6">
+      <tool Name="sed -i &quot;s|DB_HOST=.*|DB_HOST=127.0.0.1|i&quot; &quot;.env&quot;"/>
+    </command>
+    <command depends="//@job.2/@command.7">
+      <tool Name="sed -i &quot;s|DB_PORT=.*|DB_PORT=3306|i&quot; &quot;.env&quot;"/>
+    </command>
+    <command depends="//@job.2/@command.8">
+      <tool Name="sed -i &quot;s|DB_USER=.*|DB_USER=root|i&quot; &quot;.env&quot;"/>
+    </command>
+    <command depends="//@job.2/@command.9">
+      <tool Name="sed -i &quot;s|DB_PASSWORD=.*|DB_PASSWORD=root|i&quot; &quot;.env&quot;"/>
+    </command>
+    <command depends="//@job.2/@command.10">
+      <tool Name="sed -i &quot;s|DB_VERSION=.*|DB_VERSION=${{ matrix.mysql }}|i&quot; &quot;.env&quot;"/>
+    </command>
+    <command depends="//@job.2/@command.11">
+      <tool Name="actions/setup-node@v4"/>
+      <parameter Parameter="node-version: 21&#10;"/>
+    </command>
+    <command depends="//@job.2/@command.12">
+      <tool Name="actions/cache@v3"/>
+      <parameter Parameter="path: ~/.npm&#10;key: ${{ runner.os }}-yarn-${{ hashFiles('**/composer.lock') }}&#10;restore-keys: '${{ runner.os }}-yarn-&#10;&#10;    '&#10;"/>
+    </command>
+    <command depends="//@job.2/@command.13">
+      <tool Name="bin/console app:translations:dump"/>
+    </command>
+    <command depends="//@job.2/@command.14">
+      <tool Name="(cd assets &amp;&amp; yarn install)"/>
+    </command>
+    <command depends="//@job.2/@command.15">
+      <tool Name="(cd assets &amp;&amp; yarn dev)"/>
+    </command>
+    <command depends="//@job.2/@command.16">
+      <tool Name="bin/console lexik:jwt:generate-keypair --env=test"/>
+    </command>
+    <command depends="//@job.2/@command.17">
+      <tool Name="bin/console doctrine:database:create --env=test"/>
+    </command>
+    <command depends="//@job.2/@command.18">
+      <tool Name="bin/console doctrine:migration:migrate --no-interaction --allow-no-migration --env=test"/>
+    </command>
+    <command depends="//@job.2/@command.19">
+      <tool Name="php ./vendor/bin/paratest --runner=WrapperRunner"/>
+    </command>
+  </job>
+  <job Name="phpunit_mariadb">
+    <tool Name="ubuntu-latest"/>
+    <tool Name="strategy:&#10;    matrix:&#10;        mariadb:&#10;        - 10&#10;"/>
+    <tool Name="services:&#10;    mysql:&#10;        image: mariadb:${{ matrix.mariadb }}&#10;        env:&#10;            MYSQL_ROOT_PASSWORD: root&#10;        ports:&#10;        - 3306:3306&#10;        options: --health-cmd=&quot;mysqladmin ping&quot; --health-interval=10s --health-timeout=5s&#10;            --health-retries=5&#10;"/>
+    <command>
+      <tool Name="actions/checkout@v4"/>
+    </command>
+    <command depends="//@job.3/@command.0">
+      <tool Name="shivammathur/setup-php@v2"/>
+      <parameter Parameter="php-version: 8.2&#10;extensions: ctype, fileinfo, gd, iconv, intl, json&#10;"/>
+    </command>
+    <command depends="//@job.3/@command.1">
+      <tool Name="actions/cache@v3"/>
+      <parameter Parameter="path: vendor&#10;key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}&#10;restore-keys: '${{ runner.os }}-php-&#10;&#10;    '&#10;"/>
+    </command>
+    <command depends="//@job.3/@command.2">
+      <tool Name="composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist"/>
+    </command>
+    <command depends="//@job.3/@command.3">
+      <tool Name="sed -i &quot;s|APP_ENV=.*|APP_ENV=test|i&quot; &quot;.env&quot;"/>
+    </command>
+    <command depends="//@job.3/@command.4">
+      <tool Name="sed -i &quot;s|DB_DRIVER=.*|DB_DRIVER=pdo_mysql|i&quot; &quot;.env&quot;"/>
+    </command>
+    <command depends="//@job.3/@command.5">
+      <tool Name="sed -i &quot;s|DB_NAME=.*|DB_NAME=koillection|i&quot; &quot;.env&quot;"/>
+    </command>
+    <command depends="//@job.3/@command.6">
+      <tool Name="sed -i &quot;s|DB_HOST=.*|DB_HOST=127.0.0.1|i&quot; &quot;.env&quot;"/>
+    </command>
+    <command depends="//@job.3/@command.7">
+      <tool Name="sed -i &quot;s|DB_PORT=.*|DB_PORT=3306|i&quot; &quot;.env&quot;"/>
+    </command>
+    <command depends="//@job.3/@command.8">
+      <tool Name="sed -i &quot;s|DB_USER=.*|DB_USER=root|i&quot; &quot;.env&quot;"/>
+    </command>
+    <command depends="//@job.3/@command.9">
+      <tool Name="sed -i &quot;s|DB_PASSWORD=.*|DB_PASSWORD=root|i&quot; &quot;.env&quot;"/>
+    </command>
+    <command depends="//@job.3/@command.10">
+      <tool Name="sed -i &quot;s|DB_VERSION=.*|DB_VERSION=${{ matrix.mariadb }}|i&quot; &quot;.env&quot;"/>
+    </command>
+    <command depends="//@job.3/@command.11">
+      <tool Name="actions/setup-node@v4"/>
+      <parameter Parameter="node-version: 21&#10;"/>
+    </command>
+    <command depends="//@job.3/@command.12">
+      <tool Name="actions/cache@v3"/>
+      <parameter Parameter="path: ~/.npm&#10;key: ${{ runner.os }}-yarn-${{ hashFiles('**/composer.lock') }}&#10;restore-keys: '${{ runner.os }}-yarn-&#10;&#10;    '&#10;"/>
+    </command>
+    <command depends="//@job.3/@command.13">
+      <tool Name="bin/console app:translations:dump"/>
+    </command>
+    <command depends="//@job.3/@command.14">
+      <tool Name="(cd assets &amp;&amp; yarn install)"/>
+    </command>
+    <command depends="//@job.3/@command.15">
+      <tool Name="(cd assets &amp;&amp; yarn dev)"/>
+    </command>
+    <command depends="//@job.3/@command.16">
+      <tool Name="bin/console lexik:jwt:generate-keypair --env=test"/>
+    </command>
+    <command depends="//@job.3/@command.17">
+      <tool Name="bin/console doctrine:database:create --env=test"/>
+    </command>
+    <command depends="//@job.3/@command.18">
+      <tool Name="bin/console doctrine:migration:migrate --no-interaction --allow-no-migration --env=test"/>
+    </command>
+    <command depends="//@job.3/@command.19">
+      <tool Name="php ./vendor/bin/paratest --runner=WrapperRunner"/>
+    </command>
+  </job>
+  <job Name="phpunit_postgres">
+    <tool Name="ubuntu-latest"/>
+    <tool Name="strategy:&#10;    matrix:&#10;        postgres:&#10;        - 10&#10;        - 11&#10;        - 12&#10;        - 13&#10;        - 14&#10;        - 15&#10;        - 16&#10;"/>
+    <tool Name="services:&#10;    postgres:&#10;        image: postgres:${{ matrix.postgres }}&#10;        env:&#10;            POSTGRES_PASSWORD: root&#10;        ports:&#10;        - 5432:5432&#10;        options: --health-cmd pg_isready --health-interval=10s --health-timeout=5s&#10;            --health-retries=5&#10;"/>
+    <command>
+      <tool Name="actions/checkout@v4"/>
+    </command>
+    <command depends="//@job.4/@command.0">
+      <tool Name="shivammathur/setup-php@v2"/>
+      <parameter Parameter="php-version: 8.2&#10;extensions: ctype, fileinfo, gd, iconv, intl, json&#10;"/>
+    </command>
+    <command depends="//@job.4/@command.1">
+      <tool Name="actions/cache@v3"/>
+      <parameter Parameter="path: vendor&#10;key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}&#10;restore-keys: '${{ runner.os }}-php-&#10;&#10;    '&#10;"/>
+    </command>
+    <command depends="//@job.4/@command.2">
+      <tool Name="composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist"/>
+    </command>
+    <command depends="//@job.4/@command.3">
+      <tool Name="sed -i &quot;s|APP_ENV=.*|APP_ENV=test|i&quot; &quot;.env&quot;"/>
+    </command>
+    <command depends="//@job.4/@command.4">
+      <tool Name="sed -i &quot;s|DB_DRIVER=.*|DB_DRIVER=pdo_pgsql|i&quot; &quot;.env&quot;"/>
+    </command>
+    <command depends="//@job.4/@command.5">
+      <tool Name="sed -i &quot;s|DB_NAME=.*|DB_NAME=koillection|i&quot; &quot;.env&quot;"/>
+    </command>
+    <command depends="//@job.4/@command.6">
+      <tool Name="sed -i &quot;s|DB_HOST=.*|DB_HOST=127.0.0.1|i&quot; &quot;.env&quot;"/>
+    </command>
+    <command depends="//@job.4/@command.7">
+      <tool Name="sed -i &quot;s|DB_PORT=.*|DB_PORT=5432|i&quot; &quot;.env&quot;"/>
+    </command>
+    <command depends="//@job.4/@command.8">
+      <tool Name="sed -i &quot;s|DB_USER=.*|DB_USER=postgres|i&quot; &quot;.env&quot;"/>
+    </command>
+    <command depends="//@job.4/@command.9">
+      <tool Name="sed -i &quot;s|DB_PASSWORD=.*|DB_PASSWORD=root|i&quot; &quot;.env&quot;"/>
+    </command>
+    <command depends="//@job.4/@command.10">
+      <tool Name="sed -i &quot;s|DB_VERSION=.*|DB_VERSION=${{ matrix.postgres }}|i&quot; &quot;.env&quot;"/>
+    </command>
+    <command depends="//@job.4/@command.11">
+      <tool Name="actions/setup-node@v4"/>
+      <parameter Parameter="node-version: 21&#10;"/>
+    </command>
+    <command depends="//@job.4/@command.12">
+      <tool Name="actions/cache@v3"/>
+      <parameter Parameter="path: ~/.npm&#10;key: ${{ runner.os }}-yarn-${{ hashFiles('**/composer.lock') }}&#10;restore-keys: '${{ runner.os }}-yarn-&#10;&#10;    '&#10;"/>
+    </command>
+    <command depends="//@job.4/@command.13">
+      <tool Name="bin/console app:translations:dump"/>
+    </command>
+    <command depends="//@job.4/@command.14">
+      <tool Name="(cd assets &amp;&amp; yarn install)"/>
+    </command>
+    <command depends="//@job.4/@command.15">
+      <tool Name="(cd assets &amp;&amp; yarn dev)"/>
+    </command>
+    <command depends="//@job.4/@command.16">
+      <tool Name="bin/console lexik:jwt:generate-keypair --env=test"/>
+    </command>
+    <command depends="//@job.4/@command.17">
+      <tool Name="bin/console doctrine:database:create --env=test"/>
+    </command>
+    <command depends="//@job.4/@command.18">
+      <tool Name="bin/console doctrine:migration:migrate --no-interaction --allow-no-migration --env=test"/>
+    </command>
+    <command depends="//@job.4/@command.19">
+      <tool Name="php ./vendor/bin/paratest --runner=WrapperRunner"/>
+    </command>
+  </job>
+</devops2:Pipeline>

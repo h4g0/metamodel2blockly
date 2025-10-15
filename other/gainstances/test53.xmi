@@ -1,0 +1,104 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="Build packages" xmi:version="2.0">
+  <when Trigger="push:&#10;    branches:&#10;    - master&#10;    - maint-1.4&#10;"/>
+  <when Trigger="pull_request:&#10;    branches:&#10;    - master&#10;    - maint-1.4&#10;"/>
+  <when Trigger="release:&#10;    types:&#10;    - published&#10;"/>
+  <job Name="make-rhel-pkg">
+    <tool Name="ubuntu-latest"/>
+    <tool Name="container: centos:latest&#10;"/>
+    <command Name="Prepare">
+      <tool Name="yum update -y&#10;yum install -y make rpmdevtools yum-utils&#10;"/>
+    </command>
+    <command Name="Clone repo" depends="//@job.0/@command.0">
+      <tool Name="actions/checkout@v2"/>
+    </command>
+    <command Name="Make package" depends="//@job.0/@command.1">
+      <tool Name="yum-builddep --assumeyes packaging/rpm/*.spec&#10;make -C packaging/rpm pkg-local &quot;DESTDIR=${GITHUB_WORKSPACE}/pkgs/&quot;&#10;"/>
+    </command>
+    <command Name="Publish package" depends="//@job.0/@command.2">
+      <tool Name="actions/upload-artifact@v1.0.0"/>
+      <parameter Parameter="name: rhel-pkg&#10;path: pkgs&#10;"/>
+    </command>
+  </job>
+  <job Name="make-alpine-pkg">
+    <tool Name="ubuntu-latest"/>
+    <tool Name="container: alpine:latest&#10;"/>
+    <command Name="Prepare">
+      <tool Name="apk update&#10;apk upgrade&#10;apk add make&#10;apk add alpine-sdk&#10;apk add go&#10;apk add su-exec&#10;&#10;adduser -G abuild -D jobber&#10;su jobber -c &quot;abuild-keygen -an&quot;&#10;find &quot;/home/jobber/.abuild&quot; -name '*.rsa.pub' -exec mv {} /etc/apk/keys/ ';'&#10;chown root:root /etc/apk/keys/*&#10;"/>
+    </command>
+    <command Name="Clone repo" depends="//@job.1/@command.0">
+      <tool Name="actions/checkout@v2"/>
+    </command>
+    <command Name="Make package" depends="//@job.1/@command.1">
+      <tool Name="chmod a+w . packaging/alpine&#10;su jobber -c &quot;make -C packaging/alpine pkg-local DESTDIR=${GITHUB_WORKSPACE}/pkgs/&quot;&#10;"/>
+    </command>
+    <command Name="Publish package" depends="//@job.1/@command.2">
+      <tool Name="actions/upload-artifact@v1.0.0"/>
+      <parameter Parameter="name: alpine-pkg&#10;path: pkgs&#10;"/>
+    </command>
+  </job>
+  <job Name="make-debian-pkg">
+    <tool Name="ubuntu-latest"/>
+    <command Name="Prepare">
+      <tool Name="sudo apt-get update&#10;sudo apt-get install -y dpkg-dev debhelper dh-systemd&#10;"/>
+    </command>
+    <command Name="Clone repo" depends="//@job.2/@command.0">
+      <tool Name="actions/checkout@v2"/>
+    </command>
+    <command Name="Build package" depends="//@job.2/@command.1">
+      <tool Name="make -C &quot;${GITHUB_WORKSPACE}/packaging/debian&quot; pkg-local &quot;DESTDIR=${GITHUB_WORKSPACE}/pkgs/&quot;"/>
+    </command>
+    <command Name="Publish package" depends="//@job.2/@command.2">
+      <tool Name="actions/upload-artifact@v1.0.0"/>
+      <parameter Parameter="name: debian-pkg&#10;path: pkgs&#10;"/>
+    </command>
+  </job>
+  <job Name="test-on-macos">
+    <tool Name="macos-latest"/>
+    <command Name="Prepare">
+      <tool Name="python --version&#10;brew install socat&#10;sudo pip install robotframework pyyaml&#10;sudo sysadminctl -addUser normuser -home /Users/normuser&#10;sudo createhomedir -c&#10;"/>
+    </command>
+    <command Name="Clone repo" depends="//@job.3/@command.0">
+      <tool Name="actions/checkout@v2"/>
+    </command>
+    <command Name="Install Jobber" depends="//@job.3/@command.1">
+      <tool Name="make check build&#10;sudo make install DESTDIR=/&#10;PLIST=packaging/darwin/launchd.plist&#10;sudo chown root:admin &quot;${PLIST}&quot;&#10;sudo launchctl load &quot;${PLIST}&quot;&#10;sudo launchctl start info.nekonya.jobber&#10;"/>
+    </command>
+    <command Name="Test" depends="//@job.3/@command.2">
+      <tool Name="if sudo robot --include test --pythonpath platform_tests/keywords platform_tests/suites; then&#10;    echo &quot;::set-env name=PASSED_TESTS::true&quot;&#10;else&#10;    echo &quot;::set-env name=PASSED_TESTS::false&quot;&#10;fi&#10;mkdir test-report&#10;mv *.html test-report/&#10;"/>
+    </command>
+    <command Name="Publish test report" depends="//@job.3/@command.3">
+      <tool Name="actions/upload-artifact@v1.0.0"/>
+      <parameter Parameter="name: mac-test-report&#10;path: test-report&#10;"/>
+    </command>
+    <command Name="SucceedOrFail" depends="//@job.3/@command.4">
+      <tool Name="test &quot;${PASSED_TESTS}&quot; = true"/>
+    </command>
+  </job>
+  <job Name="test-on-debian" depends="//@job.2">
+    <tool Name="ubuntu-latest"/>
+    <command Name="Prepare">
+      <tool Name="sudo apt-get update&#10;sudo apt-get install -y python-pip socat&#10;sudo pip install robotframework pyyaml&#10;sudo useradd normuser -m&#10;"/>
+    </command>
+    <command Name="Download package" depends="//@job.4/@command.0">
+      <tool Name="actions/download-artifact@v1"/>
+      <parameter Parameter="name: debian-pkg&#10;"/>
+    </command>
+    <command Name="Install package" depends="//@job.4/@command.1">
+      <tool Name="sudo dpkg -i &quot;$(find ${GITHUB_WORKSPACE} -name *.deb)&quot;"/>
+    </command>
+    <command Name="Clone repo" depends="//@job.4/@command.2">
+      <tool Name="actions/checkout@v2"/>
+    </command>
+    <command Name="Test package" depends="//@job.4/@command.3">
+      <tool Name="if sudo robot --include test --pythonpath platform_tests/keywords platform_tests/suites; then&#10;    echo &quot;::set-env name=PASSED_TESTS::true&quot;&#10;else&#10;    echo &quot;::set-env name=PASSED_TESTS::false&quot;&#10;fi&#10;mkdir test-report&#10;mv *.html test-report/&#10;"/>
+    </command>
+    <command Name="Publish test report" depends="//@job.4/@command.4">
+      <tool Name="actions/upload-artifact@v1.0.0"/>
+      <parameter Parameter="name: debian-test-report&#10;path: test-report&#10;"/>
+    </command>
+    <command Name="SucceedOrFail" depends="//@job.4/@command.5">
+      <tool Name="test &quot;${PASSED_TESTS}&quot; = true"/>
+    </command>
+  </job>
+</devops2:Pipeline>

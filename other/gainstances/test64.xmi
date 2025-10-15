@@ -1,0 +1,133 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="CI" xmi:version="2.0">
+  <permission Key="contents" Value="read"/>
+  <permission Key="contents" Value="read"/>
+  <when Trigger="pull_request:&#10;    types:&#10;    - opened&#10;    - reopened&#10;    - synchronize&#10;"/>
+  <job Name="ci">
+    <tool Name="ubuntu-latest"/>
+    <command Name="Checkout">
+      <tool Name="actions/checkout@v4"/>
+    </command>
+    <command Name="Setup Go" depends="//@job.0/@command.0">
+      <tool Name="actions/setup-go@v4"/>
+      <parameter Parameter="go-version: '1.20'&#10;"/>
+    </command>
+    <command Name="Unit Tests" depends="//@job.0/@command.1">
+      <tool Name="make test"/>
+    </command>
+  </job>
+  <job Name="cli">
+    <tool Name="ubuntu-latest"/>
+    <command Name="Checkout">
+      <tool Name="actions/checkout@v4"/>
+    </command>
+    <command Name="Setup Go" depends="//@job.1/@command.0">
+      <tool Name="actions/setup-go@v4"/>
+      <parameter Parameter="go-version: '1.20'&#10;"/>
+    </command>
+    <command Name="Check CLI" depends="//@job.1/@command.1">
+      <tool Name="make tnctl"/>
+    </command>
+  </job>
+  <job Name="binaries">
+    <tool Name="ubuntu-latest"/>
+    <command Name="Checkout">
+      <tool Name="actions/checkout@v4"/>
+    </command>
+    <command Name="Setup Go" depends="//@job.2/@command.0">
+      <tool Name="actions/setup-go@v4"/>
+      <parameter Parameter="go-version: '1.20'&#10;"/>
+    </command>
+    <command Name="Check Binaries" depends="//@job.2/@command.1">
+      <tool Name="make preload&#10;make source&#10;make step&#10;make tnctl&#10;"/>
+    </command>
+  </job>
+  <job Name="dependencies">
+    <tool Name="ubuntu-latest"/>
+    <ifthenelse Condition="github.event_name == 'pull_request'">
+      <true>
+        <command Name="Checkout">
+          <tool Name="actions/checkout@v4"/>
+        </command>
+      </true>
+    </ifthenelse>
+    <ifthenelse Condition="github.event_name == 'pull_request'">
+      <true>
+        <command Name="Dependency Review" depends="//@job.3/@ifthenelse.0/@true/@command.0">
+          <tool Name="actions/dependency-review-action@v3"/>
+        </command>
+      </true>
+    </ifthenelse>
+  </job>
+  <job Name="linting">
+    <tool Name="ubuntu-latest"/>
+    <command Name="Checkout">
+      <tool Name="actions/checkout@v4"/>
+    </command>
+    <command Name="Setup Go" depends="//@job.4/@command.0">
+      <tool Name="actions/setup-go@v4"/>
+      <parameter Parameter="go-version: '1.20'&#10;"/>
+    </command>
+    <command Name="Linting" depends="//@job.4/@command.1">
+      <tool Name="make check-gofmt&#10;make shfmt&#10;make golangci-lint&#10;"/>
+    </command>
+  </job>
+  <job Name="helm">
+    <tool Name="ubuntu-latest"/>
+    <command Name="Checkout">
+      <tool Name="actions/checkout@v4"/>
+      <parameter Parameter="fetch-depth: 0&#10;"/>
+    </command>
+    <command Name="Set up Helm" depends="//@job.5/@command.0">
+      <tool Name="azure/setup-helm@v3"/>
+      <parameter Parameter="version: v3.8.1&#10;"/>
+    </command>
+    <command depends="//@job.5/@command.1">
+      <tool Name="actions/setup-python@v4"/>
+      <parameter Parameter="python-version: 3.7&#10;"/>
+    </command>
+    <command Name="Set up chart-testing" depends="//@job.5/@command.2">
+      <tool Name="helm/chart-testing-action@v2.6.1"/>
+    </command>
+    <ifthenelse Condition="github.ref == 'refs/heads/master'">
+      <true>
+        <command Name="Run chart-testing (lint)" depends="//@job.5/@command.3">
+          <tool Name="ct lint"/>
+        </command>
+      </true>
+    </ifthenelse>
+    <ifthenelse Condition="github.ref != 'refs/heads/master'">
+      <true>
+        <command Name="Run chart-testing (lint)" depends="//@job.5/@ifthenelse.0/@true/@command.0">
+          <tool Name="ct lint --check-version-increment=false"/>
+        </command>
+      </true>
+    </ifthenelse>
+  </job>
+  <job Name="controller-image">
+    <tool Name="ubuntu-latest"/>
+    <command Name="Checkout">
+      <tool Name="actions/checkout@v4"/>
+    </command>
+    <command Name="Build Image" depends="//@job.6/@command.0">
+      <tool Name="VERSION=${{ github.sha }} make controller-image"/>
+    </command>
+    <command Name="Verify Image" depends="//@job.6/@command.1">
+      <tool Name="aquasecurity/trivy-action@master"/>
+      <parameter Parameter="image-ref: ghcr.io/appvia/terranetes-controller:${{ github.sha }}&#10;ignore-unfixed: true&#10;severity: CRITICAL&#10;exit-code: 1&#10;"/>
+    </command>
+  </job>
+  <job Name="executor-image">
+    <tool Name="ubuntu-latest"/>
+    <command Name="Checkout">
+      <tool Name="actions/checkout@v4"/>
+    </command>
+    <command Name="Build Image" depends="//@job.7/@command.0">
+      <tool Name="VERSION=${{ github.sha }} make executor-image"/>
+    </command>
+    <command Name="Verify Image" depends="//@job.7/@command.1">
+      <tool Name="aquasecurity/trivy-action@master"/>
+      <parameter Parameter="image-ref: ghcr.io/appvia/terranetes-executor:${{ github.sha }}&#10;ignore-unfixed: true&#10;severity: CRITICAL&#10;exit-code: 1&#10;"/>
+    </command>
+  </job>
+</devops2:Pipeline>

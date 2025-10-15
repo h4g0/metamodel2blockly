@@ -1,0 +1,43 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="dependabot-auto-merge" xmi:version="2.0">
+  <permission Key="pull-requests" Value="write"/>
+  <permission Key="contents" Value="write"/>
+  <permission Key="pull-requests" Value="write"/>
+  <permission Key="contents" Value="write"/>
+  <when Trigger="pull_request_target: null&#10;"/>
+  <job Name="dependabot">
+    <tool Name="ubuntu-latest"/>
+    <ifthenelse Condition="${{ github.actor == 'dependabot[bot]' }}">
+      <true>
+        <command Name="Dependabot metadata">
+          <tool Name="dependabot/fetch-metadata@v1.6.0"/>
+          <parameter Parameter="github-token: ${{ secrets.GITHUB_TOKEN }}&#10;"/>
+        </command>
+      </true>
+    </ifthenelse>
+    <ifthenelse Condition="${{ github.actor == 'dependabot[bot]' }}">
+      <true>
+        <ifthenelse Condition="${{steps.metadata.outputs.update-type == 'version-update:semver-minor'}}">
+          <true>
+            <command Name="Auto-merge Dependabot PRs for semver-minor updates" depends="//@job.0/@ifthenelse.0/@true/@command.0">
+              <tool Name="gh pr merge --auto --merge &quot;$PR_URL&quot;"/>
+              <parameter Parameter="PR_URL: ${{github.event.pull_request.html_url}}&#10;GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}&#10;"/>
+            </command>
+          </true>
+        </ifthenelse>
+      </true>
+    </ifthenelse>
+    <ifthenelse Condition="${{ github.actor == 'dependabot[bot]' }}">
+      <true>
+        <ifthenelse Condition="${{steps.metadata.outputs.update-type == 'version-update:semver-patch'}}">
+          <true>
+            <command Name="Auto-merge Dependabot PRs for semver-patch updates" depends="//@job.0/@ifthenelse.1/@true/@ifthenelse.0/@true/@command.0">
+              <tool Name="gh pr merge --auto --merge &quot;$PR_URL&quot;"/>
+              <parameter Parameter="PR_URL: ${{github.event.pull_request.html_url}}&#10;GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}&#10;"/>
+            </command>
+          </true>
+        </ifthenelse>
+      </true>
+    </ifthenelse>
+  </job>
+</devops2:Pipeline>

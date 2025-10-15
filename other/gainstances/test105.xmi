@@ -1,0 +1,42 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="Docker" xmi:version="2.0">
+  <when Trigger="push:&#10;    branches:&#10;    - main&#10;    tags:&#10;    - '*.*.*'&#10;"/>
+  <environment Key="REGISTRY" Value="ghcr.io"/>
+  <environment Key="IMAGE_NAME" Value="${{ github.repository }}"/>
+  <job Name="build">
+    <permission Key="contents" Value="read"/>
+    <permission Key="packages" Value="write"/>
+    <permission Key="id-token" Value="write"/>
+    <tool Name="ubuntu-latest"/>
+    <command Name="Checkout repository">
+      <tool Name="actions/checkout@v3"/>
+    </command>
+    <command Name="Setup Docker buildx" depends="//@job.0/@ifthenelse.0/@true/@command.0">
+      <tool Name="docker/setup-buildx-action@79abd3f86f79a9d68a23c75a09a9a85889262adf"/>
+    </command>
+    <command Name="Extract Docker metadata" depends="//@job.0/@ifthenelse.1/@true/@command.0">
+      <tool Name="docker/metadata-action@98669ae865ea3cffbcbaa878cf57c20bbf1c6c38"/>
+      <parameter Parameter="images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}&#10;"/>
+    </command>
+    <command Name="Build and push Docker image" depends="//@job.0/@command.2">
+      <tool Name="docker/build-push-action@ac9327eae2b366085ac7f6a2d02df8aa8ead720a"/>
+      <parameter Parameter="context: .&#10;push: ${{ github.event_name != 'pull_request' }}&#10;tags: ${{ steps.meta.outputs.tags }}&#10;labels: ${{ steps.meta.outputs.labels }}&#10;cache-from: type=gha&#10;cache-to: type=gha,mode=max&#10;"/>
+    </command>
+    <ifthenelse Condition="github.event_name != 'pull_request'">
+      <true>
+        <command Name="Install cosign" depends="//@job.0/@command.0">
+          <tool Name="sigstore/cosign-installer@v3.1.1"/>
+          <parameter Parameter="cosign-release: v2.1.1&#10;"/>
+        </command>
+      </true>
+    </ifthenelse>
+    <ifthenelse Condition="github.event_name != 'pull_request'">
+      <true>
+        <command Name="Log into registry ${{ env.REGISTRY }}" depends="//@job.0/@command.1">
+          <tool Name="docker/login-action@28218f9b04b4f3f62068d7b6ce6ca5b26e35336c"/>
+          <parameter Parameter="registry: ${{ env.REGISTRY }}&#10;username: ${{ github.actor }}&#10;password: ${{ secrets.GITHUB_TOKEN }}&#10;"/>
+        </command>
+      </true>
+    </ifthenelse>
+  </job>
+</devops2:Pipeline>

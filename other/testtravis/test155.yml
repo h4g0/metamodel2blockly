@@ -1,0 +1,5 @@
+language: ruby
+rvm:
+  - "2.2.4"
+# command to run tests
+script: "bundle exec rake test"

@@ -1,0 +1,21 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="" xmi:version="2.0">
+  <tool Name="language: go&#10;"/>
+  <tool Name="go:&#10;- 1.2&#10;"/>
+  <job Name="install">
+    <command Name="">
+      <tool Name="export PATH=$PATH:$HOME/gopath/bin"/>
+    </command>
+    <command Name="" depends="//@job.0/@command.0">
+      <tool Name="go get code.google.com/p/go.tools/cmd/cover"/>
+    </command>
+    <command Name="" depends="//@job.0/@command.1">
+      <tool Name="go get -t"/>
+    </command>
+  </job>
+  <job Name="script">
+    <command Name="">
+      <tool Name="go test -cover"/>
+    </command>
+  </job>
+</devops2:Pipeline>

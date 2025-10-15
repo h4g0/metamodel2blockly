@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="release-please" xmi:version="2.0">
+  <permission Key="contents" Value="write"/>
+  <permission Key="pull-requests" Value="write"/>
+  <permission Key="contents" Value="write"/>
+  <permission Key="pull-requests" Value="write"/>
+  <when Trigger="push:&#10;    branches:&#10;    - main&#10;"/>
+  <job Name="release-please">
+    <tool Name="ubuntu-latest"/>
+    <command>
+      <tool Name="google-github-actions/release-please-action@v3"/>
+      <parameter Parameter="release-type: node&#10;package-name: oit&#10;"/>
+    </command>
+  </job>
+</devops2:Pipeline>

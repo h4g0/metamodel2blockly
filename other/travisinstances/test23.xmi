@@ -1,0 +1,59 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="" xmi:version="2.0">
+  <when Trigger="only:&#10;- master&#10;"/>
+  <tool Name="sudo: required&#10;"/>
+  <tool Name="services:&#10;- docker&#10;"/>
+  <job Name="env">
+    <command Name="">
+      <tool Name="global"/>
+      <parameter Parameter="- DATE=$(date '+%Y%m%d')&#10;- REPO=&quot;threathuntproj&quot;&#10;- IMAGE_NAME=&quot;hunting&quot;&#10;- JUPYTER_NB_PASS=&quot;&quot;&#10;"/>
+    </command>
+  </job>
+  <job Name="before_script">
+    <command Name="">
+      <tool Name="docker images"/>
+    </command>
+  </job>
+  <job Name="script">
+    <command Name="">
+      <tool Name="docker build --pull --build-arg JUPYTER_NB_PASS=$JUPYTER_NB_PASS -t $REPO/$IMAGE_NAME:$DATE.$TRAVIS_BUILD_NUMBER ."/>
+    </command>
+    <command Name="" depends="//@job.2/@command.0">
+      <tool Name="docker images"/>
+    </command>
+    <command Name="" depends="//@job.2/@command.1">
+      <tool Name="docker run -v `pwd`:/home/jovyan/work $REPO/$IMAGE_NAME:$DATE.$TRAVIS_BUILD_NUMBER jupyter nbconvert --to notebook --execute --ExecutePreprocessor.timeout=60 --output /tmp/testoutput-py3.ipynb /home/jovyan/work/Test.ipynb"/>
+    </command>
+    <command Name="" depends="//@job.2/@command.2">
+      <tool Name="docker run -v `pwd`:/home/jovyan/work $REPO/$IMAGE_NAME:$DATE.$TRAVIS_BUILD_NUMBER jupyter nbconvert --to notebook --execute --ExecutePreprocessor.timeout=60 --output /tmp/testoutput-spark-py3.ipynb /home/jovyan/work/Test-spark.ipynb"/>
+    </command>
+    <command Name="" depends="//@job.2/@command.3">
+      <tool Name="docker images"/>
+    </command>
+  </job>
+  <job Name="before_deploy">
+    <command Name="">
+      <tool Name="docker tag $REPO/$IMAGE_NAME:$DATE.$TRAVIS_BUILD_NUMBER $REPO/$IMAGE_NAME:latest"/>
+    </command>
+    <command Name="" depends="//@job.3/@command.0">
+      <tool Name="docker tag $REPO/$IMAGE_NAME $REPO/$IMAGE_NAME:$DATE"/>
+    </command>
+    <command Name="" depends="//@job.3/@command.1">
+      <tool Name="docker images"/>
+    </command>
+    <command Name="" depends="//@job.3/@command.2">
+      <tool Name="echo &quot;$DOCKERHUB_PASS&quot; | docker login -u &quot;$DOCKERHUB_USER&quot; --password-stdin"/>
+    </command>
+  </job>
+  <job Name="deploy">
+    <command Name="">
+      <tool Name="provider"/>
+      <parameter Parameter="script"/>
+    </command>
+    <command Name="" depends="//@job.4/@command.0">
+      <tool Name="script"/>
+      <parameter Parameter="bash ./deploy.sh"/>
+    </command>
+  </job>
+  <environment Key="global" Value="global"/>
+</devops2:Pipeline>

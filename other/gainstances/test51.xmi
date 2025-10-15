@@ -1,0 +1,46 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="Tests" xmi:version="2.0">
+  <when Trigger="pull_request: null&#10;"/>
+  <job Name="pre-commit">
+    <tool Name="ubuntu-latest"/>
+    <command>
+      <tool Name="actions/checkout@v4"/>
+    </command>
+    <command depends="//@job.0/@command.0">
+      <tool Name="actions/setup-python@v4"/>
+      <parameter Parameter="python-version: 3.11.6&#10;"/>
+    </command>
+    <command Name="Install poetry" depends="//@job.0/@command.1">
+      <tool Name="python -m pip install poetry==1.6.1"/>
+    </command>
+    <command Name="install test dependencies" depends="//@job.0/@command.2">
+      <tool Name="poetry install"/>
+    </command>
+    <command depends="//@job.0/@command.3">
+      <tool Name="pre-commit/action@v3.0.0"/>
+    </command>
+  </job>
+  <job Name="run-tests">
+    <tool Name="ubuntu-latest"/>
+    <tool Name="strategy:&#10;    fail-fast: false&#10;    matrix:&#10;        python-version:&#10;        - 3.8&#10;        - 3.9&#10;        - 3.10.13&#10;        - 3.11&#10;        - 3.12&#10;        fastapi-version:&#10;        - 0.94&#10;        - 0.103&#10;        - 0.104&#10;        jinja2-version:&#10;        - 3.1.2&#10;"/>
+    <command>
+      <tool Name="actions/checkout@v4"/>
+    </command>
+    <command depends="//@job.1/@command.0">
+      <tool Name="actions/setup-python@v4"/>
+      <parameter Parameter="python-version: ${{ matrix.python-version }}&#10;"/>
+    </command>
+    <command Name="Install poetry" depends="//@job.1/@command.1">
+      <tool Name="python -m pip install poetry==1.6.1"/>
+    </command>
+    <command Name="install test dependencies" depends="//@job.1/@command.2">
+      <tool Name="poetry install --only dev"/>
+    </command>
+    <command Name="install main dependencies from matrix" depends="//@job.1/@command.3">
+      <tool Name="poetry add fastapi==${{ matrix.fastapi-version }} jinja2==${{ matrix.jinja2-version }}"/>
+    </command>
+    <command Name="run tests" depends="//@job.1/@command.4">
+      <tool Name="poetry run pytest -v --cov-report term --cov=fastapi_htmx"/>
+    </command>
+  </job>
+</devops2:Pipeline>

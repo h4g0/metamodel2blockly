@@ -1,0 +1,36 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="CI" xmi:version="2.0">
+  <when Trigger="push: null&#10;"/>
+  <job Name="build">
+    <tool Name="ubuntu-latest"/>
+    <command Name="Checkout sources">
+      <tool Name="actions/checkout@v1"/>
+    </command>
+    <command Name="Setup Java" depends="//@job.0/@command.0">
+      <tool Name="actions/setup-java@v1"/>
+      <parameter Parameter="java-version: 17&#10;"/>
+    </command>
+    <command Name="Initialize Gradle dependencies cache" depends="//@job.0/@command.1">
+      <tool Name="actions/cache@v2"/>
+      <parameter Parameter="path: ~/.gradle/caches&#10;key: ${{ runner.os }}-gradle-caches-${{ hashFiles('**/build.gradle') }}&#10;"/>
+    </command>
+    <command Name="Run Gradle build" depends="//@job.0/@command.2">
+      <tool Name="chmod 755 gradlew &amp;&amp; ./gradlew build"/>
+    </command>
+    <ifthenelse Condition="failure()">
+      <true>
+        <command Name="Zip build reports" depends="//@job.0/@command.3">
+          <tool Name="zip -r reports.zip build/reports"/>
+        </command>
+      </true>
+    </ifthenelse>
+    <ifthenelse Condition="failure()">
+      <true>
+        <command Name="Upload build reports" depends="//@job.0/@ifthenelse.0/@true/@command.0">
+          <tool Name="actions/upload-artifact@v1"/>
+          <parameter Parameter="name: reports&#10;path: reports.zip&#10;"/>
+        </command>
+      </true>
+    </ifthenelse>
+  </job>
+</devops2:Pipeline>

@@ -1,0 +1,41 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="" xmi:version="2.0">
+  <tool Name="language: android&#10;"/>
+  <tool Name="jdk: oraclejdk8&#10;"/>
+  <tool Name="android:&#10;    components:&#10;    - platform-tools&#10;    - tools&#10;    - build-tools-28.0.3&#10;    - android-28&#10;    - extra-android-support&#10;    - extra-android-m2repository&#10;"/>
+  <job Name="before_install">
+    <command Name="">
+      <tool Name="chmod +x gradlew"/>
+    </command>
+  </job>
+  <job Name="script">
+    <command Name="">
+      <tool Name="cd app"/>
+    </command>
+    <command Name="" depends="//@job.1/@command.0">
+      <tool Name="../gradlew assembleRelease"/>
+    </command>
+  </job>
+  <job Name="deploy">
+    <command Name="">
+      <tool Name="provider"/>
+      <parameter Parameter="releases"/>
+    </command>
+    <command Name="" depends="//@job.2/@command.0">
+      <tool Name="api_key"/>
+      <parameter Parameter="secure: 37XZTS6kJROMJtr77FuCwhlYMUaSWzh2wC8aBE49ZSzhJIkhUy3BiaVK2h+AyQtMT7qb0D2c3efuNViJKwR8lQ7BZG5pSG/2bky3ilXINfnCn84SzUXGyHYPzCT/VzjNMcrnkqlawTvtPmoR5ohWJ1RD+oiL2RXMCbjQYmkTA4SZQqdOvcmGsw1rbqtC3085SmF5nB27IAOX29phZSJ/T3J3MTDmFuosfBrQBmFdzOt/9A1n/Qew4npF5xitvQC/rjhVelEXOC015HaJN2co802l8XDLQp2sZvNU5UHaX2ENawe08tHNpuNMKDxwaGVwi9t579OJCbOiNerIIRcM6ZYTy97OdxsMHFhfW+NvMae4pf1B4EwsgI+La9stfERW4XUuK6xL3tmvUZEvre5tuat+Y6aZfzDDObmt1/V8eljGycYt2ab7/sSppi97NBOI/dYAeLv5a1MTrqqfkA0igx5tNcnGPVENW9XmgXyeMHOyBdvYA2plnhhG/ef2G+QxMC+zMH1QTKYceObaKQs9COv3X5pdAH5fDQ1L+oNELG4Q3VlyEDCQ54n9dfrMNVu9V7IyA04iWilv30aOOIFNCJfXP+b2HtB7idV+9UDDsyln+ynesrs3nqQ0dd8MjOxKSIS+GSfqKVLg4r6H9qIAz0U4RbFKc+jlvAjQowhbpa4=&#10;"/>
+    </command>
+    <command Name="" depends="//@job.2/@command.1">
+      <tool Name="file"/>
+      <parameter Parameter="build/outputs/apk/release/app-release.apk"/>
+    </command>
+    <command Name="" depends="//@job.2/@command.2">
+      <tool Name="skip_cleanup"/>
+      <parameter Parameter="true&#10;...&#10;"/>
+    </command>
+    <command Name="" depends="//@job.2/@command.3">
+      <tool Name="True"/>
+      <parameter Parameter="tags: true&#10;all_branches: true&#10;"/>
+    </command>
+  </job>
+</devops2:Pipeline>

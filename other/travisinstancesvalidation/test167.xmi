@@ -1,0 +1,10 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="" xmi:version="2.0">
+  <tool Name="language: java&#10;"/>
+  <tool Name="jdk:&#10;- openjdk8&#10;"/>
+  <job Name="after_success">
+    <command Name="">
+      <tool Name="bash &lt;(curl -s https://codecov.io/bash)"/>
+    </command>
+  </job>
+</devops2:Pipeline>

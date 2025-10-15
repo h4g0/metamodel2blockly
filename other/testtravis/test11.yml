@@ -1,0 +1,59 @@
+language: scala
+
+scala:
+  - 2.13.1
+
+jdk:
+  - openjdk11
+
+jobs:
+  include:
+    - os: linux
+    - os: osx
+    - os: windows
+      language: shell
+      env: NATIVE_IMAGE_PATH="C:/Program Files/GraalVM/graalvm-ce-java11-21.0.0.2/bin/native-image.cmd"
+
+
+before_install:
+  - |-
+    case $TRAVIS_OS_NAME in
+      windows)
+        choco install graalvm sbt
+        eval $(powershell -NonInteractive -Command 'write("export PATH=`"" + ([Environment]::GetEnvironmentVariable("PATH","Machine") + ";" + [Environment]::GetEnvironmentVariable("PATH","User")).replace("\","/").replace("C:","/c").replace(";",":") + ":`$PATH`"")')
+        ;;
+    esac
+
+install:
+  - |-
+    case $TRAVIS_OS_NAME in
+      windows)
+        gu.cmd install native-image
+        ;;
+    esac
+
+script:
+  - |-
+    case $TRAVIS_OS_NAME in
+      windows)
+        sbt test
+        ./scripts/windows.bat
+        ;;
+      *)
+        sbt test 
+        sbt "nativeImage"
+        ;;
+    esac
+
+before_deploy:
+  - ./scripts/release.sh
+
+deploy:
+  provider: releases
+  skip_cleanup: true
+  api_key:
+    secure: hh2IBMCwL3F6Ku3ThlahCX72SiHMlobIwH6uqfbMZzBCgOyDwFUsad8L4ktCqZABY5sUzfzIx3Pe6aGy4owfjqVm10nODOU4HA6kcCJrnHPkonySh6wASqjOiw9rHOty6p2Sn7Urqx1Ox/CHGgKMGKCcxBujwcN/4uPu1vCeTCEE1V5rFLaLmhT8bHFV2JjCpEEkRQmoPgTfJwJsNKnblw4A0z3weD7BNuiBXmQLBkdP1fUna+a1++WkWEIAybjqFEtVinfuJVQWCaL2MAfS5qCefrga7/nmP0AAKJPVc65YpGC1osTibm00vLnqE7wgXZT38xVjIdwzlnGBjnsoIJGiVLBAPDlg+kUcfuXQoi94JQQ9/0A0vADhra1WQeaf7a2m/bhpmHvq6VnY2X3nLqOZVkylkiE019y0xZ+qQc7uOT8b+zX3zWMrqrUJ/d/u2a2Iotd81WCdVuSY1fVX7GT+rqfDshwWPvSu9FNcrMSC11Nv9hIB6i8BfPKJo8l0SIJeEgyaXnNaznf+vO1KNJYYBijKEZmeVdHtbvUOH7ze60KnlgVTF/wmcE2JVJTtpRBQL1SDH2KkF8I+L1CfwdhylsNRoW93sMJBLFJG2lHEfZlAd4WV7ekKnuigHYI+pd5tDE5a+A1ASnm1vwR096Bz//1crtBJCjuawH/hikQ=
+  file: release/*
+  file_glob: true
+  on:
+    tags: true

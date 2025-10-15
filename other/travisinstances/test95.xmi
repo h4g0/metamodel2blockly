@@ -1,0 +1,27 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="" xmi:version="2.0">
+  <tool Name="language: node_js&#10;"/>
+  <tool Name="node_js:&#10;- node&#10;"/>
+  <tool Name="cache: yarn&#10;"/>
+  <tool Name="addons:&#10;    ssh_known_hosts:&#10;    - github.com&#10;    - 192.30.253.112&#10;    - 192.30.253.113&#10;"/>
+  <job Name="before_install">
+    <command Name="">
+      <tool Name="openssl aes-256-cbc -K $encrypted_fbdbd197bbf4_key -iv $encrypted_fbdbd197bbf4_iv -in service-account.json.enc -out service-account.json -d"/>
+    </command>
+  </job>
+  <job Name="deploy">
+    <command Name="">
+      <tool Name="provider"/>
+      <parameter Parameter="gae"/>
+    </command>
+    <command Name="" depends="//@job.1/@command.0">
+      <tool Name="keyfile"/>
+      <parameter Parameter="service-account.json"/>
+    </command>
+    <command Name="" depends="//@job.1/@command.1">
+      <tool Name="project"/>
+      <parameter Parameter="puppeteerexamples"/>
+    </command>
+  </job>
+  <when Trigger="only:&#10;- master&#10;"/>
+</devops2:Pipeline>

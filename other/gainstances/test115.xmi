@@ -1,0 +1,178 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="Release" xmi:version="2.0">
+  <when Trigger="push:&#10;    tags:&#10;    - v*.*.*&#10;"/>
+  <environment Key="TPE_HPO_BIN" Value="tpe_hyperparameter_optm"/>
+  <environment Key="SERVING_BIN" Value="serving"/>
+  <environment Key="EVALUATOR_BIN" Value="evaluator"/>
+  <environment Key="RELEASE_NAME" Value="Serenade"/>
+  <environment Key="WINDOWS_TARGET" Value="x86_64-pc-windows-msvc.Zip"/>
+  <environment Key="MACOS_TARGET" Value="x86_64-apple-darwin.tar.gz"/>
+  <environment Key="LINUX_AMD64_TARGET" Value="x86_64-unknown-linux-musl.tar.gz"/>
+  <environment Key="LINUX_ARM64_TARGET" Value="aarch64-unknown-linux-musl.tar.gz"/>
+  <job Name="linuxCI">
+    <tool Name="ubuntu-latest"/>
+    <ifthenelse Condition="startsWith(github.ref, 'refs/tags/')">
+      <true>
+        <command Name="Get version">
+          <tool Name="echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}"/>
+        </command>
+      </true>
+    </ifthenelse>
+    <ifthenelse Condition="startsWith(github.ref, 'refs/tags/')">
+      <true>
+        <command Name="Checkout" depends="//@job.0/@ifthenelse.0/@true/@command.0">
+          <tool Name="actions/checkout@v2"/>
+          <parameter Parameter="fetch-depth: 0&#10;"/>
+        </command>
+      </true>
+    </ifthenelse>
+    <ifthenelse Condition="startsWith(github.ref, 'refs/tags/')">
+      <true>
+        <command Name="Install latest rust toolchain" depends="//@job.0/@ifthenelse.1/@true/@command.0">
+          <tool Name="actions-rs/toolchain@v1"/>
+          <parameter Parameter="toolchain: stable&#10;default: true&#10;override: true&#10;"/>
+        </command>
+      </true>
+    </ifthenelse>
+    <ifthenelse Condition="startsWith(github.ref, 'refs/tags/')">
+      <true>
+        <command Name="Build" depends="//@job.0/@ifthenelse.2/@true/@command.0">
+          <tool Name="cargo build --all --release"/>
+        </command>
+      </true>
+    </ifthenelse>
+    <ifthenelse Condition="startsWith(github.ref, 'refs/tags/')">
+      <true>
+        <command Name="Test" depends="//@job.0/@ifthenelse.3/@true/@command.0">
+          <tool Name="cargo test"/>
+        </command>
+      </true>
+    </ifthenelse>
+    <ifthenelse Condition="startsWith(github.ref, 'refs/tags/')">
+      <true>
+        <command Name="Release binaries" depends="//@job.0/@ifthenelse.4/@true/@command.0">
+          <tool Name="cd target/release&#10;tar czvf ../../${{ env.RELEASE_NAME }}-${{ steps.get_version.outputs.VERSION }}-${{ env.LINUX_AMD64_TARGET }} ${{ env.TPE_HPO_BIN }} ${{ env.SERVING_BIN }} ${{ env.EVALUATOR_BIN }}&#10;cd -&#10;"/>
+        </command>
+      </true>
+    </ifthenelse>
+    <ifthenelse Condition="startsWith(github.ref, 'refs/tags/')">
+      <true>
+        <command Name="Publish linux release" depends="//@job.0/@ifthenelse.5/@true/@command.0">
+          <tool Name="softprops/action-gh-release@v1"/>
+          <parameter Parameter="files: ${{ env.RELEASE_NAME }}-${{ steps.get_version.outputs.VERSION }}-${{ env.LINUX_AMD64_TARGET&#10;    }}&#10;"/>
+        </command>
+      </true>
+    </ifthenelse>
+    <ifthenelse Condition="startsWith(github.ref, 'refs/tags/')">
+      <true>
+        <command Name="Release crate" depends="//@job.0/@ifthenelse.6/@true/@command.0">
+          <tool Name="katyo/publish-crates@v1"/>
+          <parameter Parameter="registry-token: ${{ secrets.CARGO_REGISTRY_TOKEN }}&#10;"/>
+        </command>
+      </true>
+    </ifthenelse>
+  </job>
+  <job Name="macCI">
+    <tool Name="macos-latest"/>
+    <ifthenelse Condition="startsWith(github.ref, 'refs/tags/')">
+      <true>
+        <command Name="Get version">
+          <tool Name="echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}"/>
+        </command>
+      </true>
+    </ifthenelse>
+    <ifthenelse Condition="startsWith(github.ref, 'refs/tags/')">
+      <true>
+        <command Name="Checkout" depends="//@job.1/@ifthenelse.0/@true/@command.0">
+          <tool Name="actions/checkout@v2"/>
+          <parameter Parameter="fetch-depth: 0&#10;"/>
+        </command>
+      </true>
+    </ifthenelse>
+    <ifthenelse Condition="startsWith(github.ref, 'refs/tags/')">
+      <true>
+        <command Name="Install latest rust toolchain" depends="//@job.1/@ifthenelse.1/@true/@command.0">
+          <tool Name="actions-rs/toolchain@v1"/>
+          <parameter Parameter="toolchain: stable&#10;target: x86_64-apple-darwin&#10;default: true&#10;override: true&#10;"/>
+        </command>
+      </true>
+    </ifthenelse>
+    <ifthenelse Condition="startsWith(github.ref, 'refs/tags/')">
+      <true>
+        <command Name="Build" depends="//@job.1/@ifthenelse.2/@true/@command.0">
+          <tool Name="cargo build --all --release"/>
+        </command>
+      </true>
+    </ifthenelse>
+    <ifthenelse Condition="startsWith(github.ref, 'refs/tags/')">
+      <true>
+        <command Name="Release binaries" depends="//@job.1/@ifthenelse.3/@true/@command.0">
+          <tool Name="cd target/release&#10;tar czvf ../../${{ env.RELEASE_NAME }}-${{ steps.get_version.outputs.VERSION }}-${{ env.MACOS_TARGET }} ${{ env.TPE_HPO_BIN }} ${{ env.SERVING_BIN }} ${{ env.EVALUATOR_BIN }}&#10;cd -&#10;"/>
+        </command>
+      </true>
+    </ifthenelse>
+    <ifthenelse Condition="startsWith(github.ref, 'refs/tags/')">
+      <true>
+        <command Name="Publish mac release" depends="//@job.1/@ifthenelse.4/@true/@command.0">
+          <tool Name="softprops/action-gh-release@v1"/>
+          <parameter Parameter="files: ${{ env.RELEASE_NAME }}-${{ steps.get_version.outputs.VERSION }}-${{ env.MACOS_TARGET&#10;    }}&#10;"/>
+        </command>
+      </true>
+    </ifthenelse>
+  </job>
+  <job Name="winCI">
+    <tool Name="windows-latest"/>
+    <ifthenelse Condition="startsWith(github.ref, 'refs/tags/')">
+      <true>
+        <command Name="Install 7Zip PowerShell Module">
+          <tool Name="Install-Module 7Zip4PowerShell -Force -Verbose"/>
+        </command>
+      </true>
+    </ifthenelse>
+    <ifthenelse Condition="startsWith(github.ref, 'refs/tags/')">
+      <true>
+        <command depends="//@job.2/@ifthenelse.0/@true/@command.0">
+          <tool Name="battila7/get-version-action@v2"/>
+        </command>
+      </true>
+    </ifthenelse>
+    <ifthenelse Condition="startsWith(github.ref, 'refs/tags/')">
+      <true>
+        <command Name="Checkout" depends="//@job.2/@ifthenelse.1/@true/@command.0">
+          <tool Name="actions/checkout@v2"/>
+          <parameter Parameter="fetch-depth: 0&#10;"/>
+        </command>
+      </true>
+    </ifthenelse>
+    <ifthenelse Condition="startsWith(github.ref, 'refs/tags/')">
+      <true>
+        <command Name="Install latest rust toolchain" depends="//@job.2/@ifthenelse.2/@true/@command.0">
+          <tool Name="actions-rs/toolchain@v1"/>
+          <parameter Parameter="toolchain: stable&#10;default: true&#10;override: true&#10;"/>
+        </command>
+      </true>
+    </ifthenelse>
+    <ifthenelse Condition="startsWith(github.ref, 'refs/tags/')">
+      <true>
+        <command Name="Build" depends="//@job.2/@ifthenelse.3/@true/@command.0">
+          <tool Name="cargo build --all --release"/>
+        </command>
+      </true>
+    </ifthenelse>
+    <ifthenelse Condition="startsWith(github.ref, 'refs/tags/')">
+      <true>
+        <command Name="Release binaries" depends="//@job.2/@ifthenelse.4/@true/@command.0">
+          <tool Name="$compress = @{&#10;  Path = &quot;D:\a\serenade\serenade\target\release\${{ env.TPE_HPO_BIN }}.exe&quot;, &quot;D:\a\serenade\serenade\target\release\${{ env.SERVING_BIN }}.exe&quot;, &quot;D:\a\serenade\serenade\target\release\${{ env.EVALUATOR_BIN }}.exe&quot;&#10;  CompressionLevel = &quot;Fastest&quot;&#10;  DestinationPath = &quot;.\${{ env.RELEASE_NAME }}-${{ steps.get_version.outputs.version }}-${{ env.WINDOWS_TARGET }}&quot;&#10;}&#10;Compress-Archive @compress&#10;"/>
+        </command>
+      </true>
+    </ifthenelse>
+    <ifthenelse Condition="startsWith(github.ref, 'refs/tags/')">
+      <true>
+        <command Name="Publish win release" depends="//@job.2/@ifthenelse.5/@true/@command.0">
+          <tool Name="softprops/action-gh-release@v1"/>
+          <parameter Parameter="files: .\${{ env.RELEASE_NAME }}-${{ steps.get_version.outputs.version }}-${{ env.WINDOWS_TARGET&#10;    }}&#10;"/>
+        </command>
+      </true>
+    </ifthenelse>
+  </job>
+</devops2:Pipeline>

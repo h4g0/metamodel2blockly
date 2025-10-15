@@ -1,0 +1,80 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="Build" xmi:version="2.0">
+  <when Trigger="push:&#10;    branches:&#10;    - main&#10;"/>
+  <when Trigger="pull_request: null&#10;"/>
+  <job Name="build">
+    <tool Name="ubuntu-latest"/>
+    <command Name="Fetch Sources">
+      <tool Name="actions/checkout@v2.4.0"/>
+    </command>
+    <command Name="Gradle Wrapper Validation" depends="//@job.0/@command.0">
+      <tool Name="gradle/wrapper-validation-action@v1.0.4"/>
+    </command>
+    <command Name="Setup Java" depends="//@job.0/@command.1">
+      <tool Name="actions/setup-java@v2"/>
+      <parameter Parameter="distribution: zulu&#10;java-version: 11&#10;cache: gradle&#10;"/>
+    </command>
+    <command Name="Export Properties" depends="//@job.0/@command.2">
+      <tool Name="PROPERTIES=&quot;$(./gradlew properties --console=plain -q)&quot;&#10;VERSION=&quot;$(echo &quot;$PROPERTIES&quot; | grep &quot;^version:&quot; | cut -f2- -d ' ')&quot;&#10;NAME=&quot;$(echo &quot;$PROPERTIES&quot; | grep &quot;^pluginName:&quot; | cut -f2- -d ' ')&quot;&#10;CHANGELOG=&quot;$(./gradlew getChangelog --unreleased --no-header --console=plain -q)&quot;&#10;CHANGELOG=&quot;${CHANGELOG//'%'/'%25'}&quot;&#10;CHANGELOG=&quot;${CHANGELOG//$'\n'/'%0A'}&quot;&#10;CHANGELOG=&quot;${CHANGELOG//$'\r'/'%0D'}&quot;&#10;&#10;echo &quot;::set-output name=version::$VERSION&quot;&#10;echo &quot;::set-output name=name::$NAME&quot;&#10;echo &quot;::set-output name=changelog::$CHANGELOG&quot;&#10;echo &quot;::set-output name=pluginVerifierHomeDir::~/.pluginVerifier&quot;&#10;&#10;./gradlew listProductsReleases # prepare list of IDEs for Plugin Verifier&#10;"/>
+    </command>
+    <command Name="Run Tests" depends="//@job.0/@command.3">
+      <tool Name="./gradlew test"/>
+    </command>
+    <command Name="Setup Plugin Verifier IDEs Cache" depends="//@job.0/@ifthenelse.0/@true/@command.0">
+      <tool Name="actions/cache@v2.1.6"/>
+      <parameter Parameter="path: ${{ steps.properties.outputs.pluginVerifierHomeDir }}/ides&#10;key: plugin-verifier-${{ hashFiles('build/listProductsReleases.txt') }}&#10;"/>
+    </command>
+    <command Name="Run Plugin Verification tasks" depends="//@job.0/@command.5">
+      <tool Name="./gradlew runPluginVerifier -Pplugin.verifier.home.dir=${{ steps.properties.outputs.pluginVerifierHomeDir }}"/>
+    </command>
+    <command Name="Prepare Plugin Artifact" depends="//@job.0/@ifthenelse.1/@true/@command.0">
+      <tool Name="cd ${{ github.workspace }}/build/distributions&#10;FILENAME=`ls *.zip`&#10;unzip &quot;$FILENAME&quot; -d content&#10;&#10;echo &quot;::set-output name=filename::$FILENAME&quot;&#10;"/>
+    </command>
+    <command Name="Upload artifact" depends="//@job.0/@command.7">
+      <tool Name="actions/upload-artifact@v2.2.4"/>
+      <parameter Parameter="name: ${{ steps.artifact.outputs.filename }}&#10;path: ./build/distributions/content/*/*&#10;"/>
+    </command>
+    <ifthenelse Condition="${{ failure() }}">
+      <true>
+        <command Name="Collect Tests Result" depends="//@job.0/@command.4">
+          <tool Name="actions/upload-artifact@v2"/>
+          <parameter Parameter="name: tests-result&#10;path: ${{ github.workspace }}/build/reports/tests&#10;"/>
+        </command>
+      </true>
+    </ifthenelse>
+    <ifthenelse Condition="${{ always() }}">
+      <true>
+        <command Name="Collect Plugin Verifier Result" depends="//@job.0/@command.6">
+          <tool Name="actions/upload-artifact@v2"/>
+          <parameter Parameter="name: pluginVerifier-result&#10;path: ${{ github.workspace }}/build/reports/pluginVerifier&#10;"/>
+        </command>
+      </true>
+    </ifthenelse>
+  </job>
+  <job Name="releaseDraft" depends="//@job.0">
+    <tool Name="ubuntu-latest"/>
+    <ifthenelse Condition="github.event_name != 'pull_request'">
+      <true>
+        <command Name="Fetch Sources">
+          <tool Name="actions/checkout@v2.4.0"/>
+        </command>
+      </true>
+    </ifthenelse>
+    <ifthenelse Condition="github.event_name != 'pull_request'">
+      <true>
+        <command Name="Remove Old Release Drafts" depends="//@job.1/@ifthenelse.0/@true/@command.0">
+          <tool Name="gh api repos/{owner}/{repo}/releases \&#10;  --jq '.[] | select(.draft == true) | .id' \&#10;  | xargs -I '{}' gh api -X DELETE repos/{owner}/{repo}/releases/{}&#10;"/>
+          <parameter Parameter="GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}&#10;"/>
+        </command>
+      </true>
+    </ifthenelse>
+    <ifthenelse Condition="github.event_name != 'pull_request'">
+      <true>
+        <command Name="Create Release Draft" depends="//@job.1/@ifthenelse.1/@true/@command.0">
+          <tool Name="gh release create v${{ needs.build.outputs.version }} \&#10;  --draft \&#10;  --title &quot;v${{ needs.build.outputs.version }}&quot; \&#10;  --notes &quot;$(cat &lt;&lt; 'EOM'&#10;${{ needs.build.outputs.changelog }}&#10;EOM&#10;)&quot;&#10;"/>
+          <parameter Parameter="GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}&#10;"/>
+        </command>
+      </true>
+    </ifthenelse>
+  </job>
+</devops2:Pipeline>

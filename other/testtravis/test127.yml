@@ -1,0 +1,40 @@
+language: node_js
+cache:
+  directories:
+    - ~/.npm
+    - ~/.cache
+notifications:
+  email: true
+node_js: '10'
+
+stages:
+  - 'Tests'
+  - name: 'Deploy'
+    if: branch = master
+
+install:
+  - npm ci
+  - cd e2e
+  - npm ci
+  - cd ..
+
+script:
+  - npm test
+  - cd e2e
+  - npm t
+
+jobs:
+  fail_fast: true
+  include:
+    - stage: 'Tests'
+      name: 'Fixed Dependencies'
+
+    - stage: 'Deploy'
+      name: 'Publish to npm'
+      install:
+        - npm ci
+      script: npm run semantic-release
+
+branches:
+  except:
+    - /^v\d+\.\d+\.\d+$/

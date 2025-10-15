@@ -1,0 +1,52 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="Integration" xmi:version="2.0">
+  <permission Key="contents" Value="read"/>
+  <permission Key="contents" Value="read"/>
+  <tool Name="defaults:&#10;    run:&#10;        shell: bash&#10;"/>
+  <when Trigger="push: null&#10;"/>
+  <when Trigger="pull_request: null&#10;"/>
+  <environment Key="concurrency" Value="group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}&#10;cancel-in-progress: true&#10;"/>
+  <job Name="tests">
+    <tool Name="Ubuntu-20.04"/>
+    <tool Name="strategy:&#10;    matrix:&#10;        php:&#10;        - '8.1'&#10;    fail-fast: false&#10;"/>
+    <tool Name="services:&#10;    postgres:&#10;        image: postgres:10.6-alpine&#10;        ports:&#10;        - 5432:5432&#10;        env:&#10;            POSTGRES_PASSWORD: password&#10;    ldap:&#10;        image: bitnami/openldap&#10;        ports:&#10;        - 3389:3389&#10;        env:&#10;            LDAP_ADMIN_USERNAME: admin&#10;            LDAP_ADMIN_PASSWORD: symfony&#10;            LDAP_ROOT: dc=symfony,dc=com&#10;            LDAP_PORT_NUMBER: 3389&#10;            LDAP_USERS: a&#10;            LDAP_PASSWORDS: a&#10;    redis:&#10;        image: redis:6.2.8&#10;        ports:&#10;        - 16379:6379&#10;    redis-cluster:&#10;        image: grokzen/redis-cluster:6.2.8&#10;        ports:&#10;        - 7000:7000&#10;        - 7001:7001&#10;        - 7002:7002&#10;        - 7003:7003&#10;        - 7004:7004&#10;        - 7005:7005&#10;        - 7006:7006&#10;        env:&#10;            STANDALONE: 1&#10;    redis-sentinel:&#10;        image: bitnami/redis-sentinel:6.2.8&#10;        ports:&#10;        - 26379:26379&#10;        env:&#10;            REDIS_MASTER_HOST: redis&#10;            REDIS_MASTER_SET: redis_sentinel&#10;            REDIS_SENTINEL_QUORUM: 1&#10;    memcached:&#10;        image: memcached:1.6.5&#10;        ports:&#10;        - 11211:11211&#10;    rabbitmq:&#10;        image: rabbitmq:3.8.3&#10;        ports:&#10;        - 5672:5672&#10;    mongodb:&#10;        image: mongo&#10;        ports:&#10;        - 27017:27017&#10;    couchbase:&#10;        image: couchbase:6.5.1&#10;        ports:&#10;        - 8091:8091&#10;        - 8092:8092&#10;        - 8093:8093&#10;        - 8094:8094&#10;        - 11210:11210&#10;    sqs:&#10;        image: asyncaws/testing-sqs&#10;        ports:&#10;        - 9494:9494&#10;    zookeeper:&#10;        image: wurstmeister/zookeeper:3.4.6&#10;    kafka:&#10;        image: wurstmeister/kafka:2.12-2.0.1&#10;        ports:&#10;        - 9092:9092&#10;        env:&#10;            KAFKA_AUTO_CREATE_TOPICS_ENABLE: false&#10;            KAFKA_CREATE_TOPICS: test-topic:1:1:compact&#10;            KAFKA_ADVERTISED_HOST_NAME: 127.0.0.1&#10;            KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181&#10;            KAFKA_ADVERTISED_PORT: 9092&#10;"/>
+    <command Name="Checkout">
+      <tool Name="actions/checkout@v3"/>
+    </command>
+    <command Name="Install system dependencies" depends="//@job.0/@command.0">
+      <tool Name="echo &quot;::group::apt-get update&quot;&#10;sudo wget -O - https://packages.couchbase.com/clients/c/repos/deb/couchbase.key | sudo apt-key add -&#10;echo &quot;deb https://packages.couchbase.com/clients/c/repos/deb/ubuntu2004 focal focal/main&quot; | sudo tee /etc/apt/sources.list.d/couchbase.list&#10;sudo apt-get update&#10;echo &quot;::endgroup::&quot;&#10;&#10;echo &quot;::group::install tools &amp; libraries&quot;&#10;sudo apt-get install librdkafka-dev redis-server libcouchbase-dev&#10;sudo -- sh -c 'echo unixsocket /var/run/redis/redis-server.sock &gt;&gt; /etc/redis/redis.conf'&#10;sudo -- sh -c 'echo unixsocketperm 777 &gt;&gt; /etc/redis/redis.conf'&#10;sudo service redis-server restart&#10;echo &quot;::endgroup::&quot;&#10;"/>
+    </command>
+    <command Name="Configure Couchbase" depends="//@job.0/@command.1">
+      <tool Name="curl -s -u 'username=Administrator&amp;password=111111' -X POST http://localhost:8091/node/controller/setupServices -d 'services=kv%2Cn1ql%2Cindex%2Cfts'&#10;curl -s -X POST http://localhost:8091/settings/web -d 'username=Administrator&amp;password=111111&amp;port=SAME'&#10;curl -s -u Administrator:111111 -X POST http://localhost:8091/pools/default/buckets -d 'ramQuotaMB=100&amp;bucketType=ephemeral&amp;name=cache'&#10;curl -s -u Administrator:111111 -X POST  http://localhost:8091/pools/default -d 'memoryQuota=256'&#10;"/>
+    </command>
+    <command Name="Setup PHP" depends="//@job.0/@command.2">
+      <tool Name="shivammathur/setup-php@v2"/>
+      <parameter Parameter="coverage: none&#10;extensions: json,couchbase-3.2.2,memcached,mongodb-1.12.0,redis,rdkafka,xsl,ldap,relay&#10;ini-values: date.timezone=UTC,memory_limit=-1,default_socket_timeout=10,session.gc_probability=0,apc.enable_cli=1,zend.assertions=1&#10;php-version: ${{ matrix.php }}&#10;tools: pecl&#10;"/>
+    </command>
+    <command Name="Display versions" depends="//@job.0/@command.3">
+      <tool Name="php -r 'foreach (get_loaded_extensions() as $extension) echo $extension . &quot; &quot; . phpversion($extension) . PHP_EOL;'&#10;php -i&#10;"/>
+    </command>
+    <command Name="Load fixtures" depends="//@job.0/@command.4">
+      <tool Name="docker://bitnami/openldap"/>
+      <parameter Parameter="entrypoint: /bin/bash&#10;args: -c &quot;(/opt/bitnami/openldap/bin/ldapwhoami -H ldap://ldap:3389 -D cn=admin,dc=symfony,dc=com&#10;    -w symfony||sleep 5) &amp;&amp; /opt/bitnami/openldap/bin/ldapadd -H ldap://ldap:3389&#10;    -D cn=admin,dc=symfony,dc=com -w symfony -f src/Symfony/Component/Ldap/Tests/Fixtures/data/fixtures.ldif&#10;    &amp;&amp; /opt/bitnami/openldap/bin/ldapdelete -H ldap://ldap:3389 -D cn=admin,dc=symfony,dc=com&#10;    -w symfony cn=a,ou=users,dc=symfony,dc=com&quot;&#10;"/>
+    </command>
+    <command Name="Install dependencies" depends="//@job.0/@command.5">
+      <tool Name="COMPOSER_HOME=&quot;$(composer config home)&quot;&#10;([ -d &quot;$COMPOSER_HOME&quot; ] || mkdir &quot;$COMPOSER_HOME&quot;) &amp;&amp; cp .github/composer-config.json &quot;$COMPOSER_HOME/config.json&quot;&#10;export COMPOSER_ROOT_VERSION=$(grep ' VERSION = ' src/Symfony/Component/HttpKernel/Kernel.php | grep -P -o '[0-9]+\.[0-9]+').x-dev&#10;echo COMPOSER_ROOT_VERSION=$COMPOSER_ROOT_VERSION &gt;&gt; $GITHUB_ENV&#10;&#10;echo &quot;::group::composer update&quot;&#10;composer require --dev --no-update mongodb/mongodb&#10;composer update --no-progress --ansi&#10;echo &quot;::endgroup::&quot;&#10;&#10;echo &quot;::group::install phpunit&quot;&#10;./phpunit install&#10;echo &quot;::endgroup::&quot;&#10;"/>
+    </command>
+    <command Name="Run tests" depends="//@job.0/@command.6">
+      <tool Name="./phpunit --group integration -v"/>
+      <parameter Parameter="REDIS_HOST: localhost:16379&#10;REDIS_CLUSTER_HOSTS: localhost:7000 localhost:7001 localhost:7002 localhost:7003 localhost:7004&#10;    localhost:7005&#10;REDIS_SENTINEL_HOSTS: localhost:26379 localhost:26379 localhost:26379&#10;REDIS_SENTINEL_SERVICE: redis_sentinel&#10;MESSENGER_REDIS_DSN: redis://127.0.0.1:7006/messages&#10;MESSENGER_AMQP_DSN: amqp://localhost/%2f/messages&#10;MESSENGER_SQS_DSN: sqs://localhost:9494/messages?sslmode=disable&amp;poll_timeout=0.01&#10;MESSENGER_SQS_FIFO_QUEUE_DSN: sqs://localhost:9494/messages.fifo?sslmode=disable&amp;poll_timeout=0.01&#10;KAFKA_BROKER: 127.0.0.1:9092&#10;POSTGRES_HOST: localhost&#10;"/>
+    </command>
+    <command depends="//@job.0/@command.7">
+      <tool Name="marceloprado/has-changed-path@v1"/>
+      <parameter Parameter="paths: src/**/Resources/translations/*.xlf&#10;"/>
+    </command>
+    <ifthenelse Condition="steps.changed-translation-files.outputs.changed == 'true'">
+      <true>
+        <command Name="Check Translation Status" depends="//@job.0/@command.8">
+          <tool Name="php src/Symfony/Component/Translation/Resources/bin/translation-status.php -v&#10;"/>
+        </command>
+      </true>
+    </ifthenelse>
+  </job>
+</devops2:Pipeline>

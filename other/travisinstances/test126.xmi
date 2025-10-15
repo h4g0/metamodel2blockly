@@ -1,0 +1,88 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="" xmi:version="2.0">
+  <tool Name="language: c&#10;"/>
+  <tool Name="sudo: false&#10;"/>
+  <tool Name="matrix:&#10;    include:&#10;    -   os: linux&#10;        dist: trusty&#10;    -   os: osx&#10;        osx_image: xcode9.1&#10;        compiler: clang&#10;    allow_failures:&#10;    -   os: osx&#10;"/>
+  <tool Name="addons:&#10;    apt:&#10;        sources:&#10;        - ubuntu-toolchain-r-test&#10;        - llvm-toolchain-trusty-5.0&#10;        packages:&#10;        - clang-5.0&#10;        - llvm-5.0&#10;        - llvm-5.0-dev&#10;        - lld-5.0&#10;        - liblz4-dev&#10;        - squashfs-tools&#10;        - graphviz&#10;        - python3&#10;        - python3-pip&#10;        - jq&#10;        - doxygen&#10;"/>
+  <job Name="env">
+    <command Name="">
+      <tool Name="global"/>
+      <parameter Parameter="- DEPS_DIR=${TRAVIS_BUILD_DIR}/deps&#10;- MEPHISTO_VERSION=v1.2.1&#10;- LIBTRANSISTOR_BASE_VERSION=v2.2.0-rc1&#10;"/>
+    </command>
+  </job>
+  <job Name="install">
+    <command Name="">
+      <tool Name="export LLVM_POSTFIX=-5.0"/>
+    </command>
+    <command Name="" depends="//@job.1/@command.0">
+      <tool Name="if [[ ${TRAVIS_OS_NAME} == &quot;linux&quot; ]]; then&#10;  CMAKE_URL=&quot;http://www.cmake.org/files/v3.4/cmake-3.4.3-Linux-x86_64.tar.gz&quot;&#10;  mkdir -p ${DEPS_DIR}/cmake&#10;  travis_retry wget --no-check-certificate --quiet -O - ${CMAKE_URL} | tar --strip-components=1 -xz -C ${DEPS_DIR}/cmake&#10;  export PATH=${DEPS_DIR}/cmake/bin:${PATH}&#10;fi&#10;"/>
+    </command>
+    <command Name="" depends="//@job.1/@command.1">
+      <tool Name="if [[ ${TRAVIS_OS_NAME} == &quot;osx&quot; ]]; then&#10;  export LLVM_POSTFIX=&quot;&quot;;&#10;  brew install llvm qemu lz4 squashfs ;&#10;  brew upgrade python ;&#10;  export PATH=&quot;$(brew --prefix llvm)/bin:$(brew --prefix python3)/bin:$PATH&quot;;&#10;fi&#10;"/>
+    </command>
+    <command Name="" depends="//@job.1/@command.2">
+      <tool Name="pip3 install --user --upgrade pip setuptools wheel"/>
+    </command>
+  </job>
+  <job Name="before_script">
+    <command Name="">
+      <tool Name="wget -nv https://github.com/reswitched/Mephisto/releases/download/$MEPHISTO_VERSION/ctu_$TRAVIS_OS_NAME"/>
+    </command>
+    <command Name="" depends="//@job.2/@command.0">
+      <tool Name="chmod +x ctu_$TRAVIS_OS_NAME"/>
+    </command>
+    <command Name="" depends="//@job.2/@command.1">
+      <tool Name="wget -nv https://github.com/reswitched/libtransistor-base/releases/download/$LIBTRANSISTOR_BASE_VERSION/libtransistor-base_$LIBTRANSISTOR_BASE_VERSION.tar.gz"/>
+    </command>
+    <command Name="" depends="//@job.2/@command.2">
+      <tool Name="mkdir dist"/>
+    </command>
+    <command Name="" depends="//@job.2/@command.3">
+      <tool Name="tar xzf libtransistor-base_$LIBTRANSISTOR_BASE_VERSION.tar.gz -C dist"/>
+    </command>
+    <command Name="" depends="//@job.2/@command.4">
+      <tool Name="pip3 install --user -r dist/requirements.txt"/>
+    </command>
+  </job>
+  <job Name="script"/>
+  <job Name="after_success">
+    <command Name="">
+      <tool Name="if [[ ${TRAVIS_OS_NAME} == &quot;linux&quot; ]]; then doxygen Doxyfile; fi"/>
+    </command>
+    <command Name="" depends="//@job.4/@command.0">
+      <tool Name="cd build/test/"/>
+    </command>
+    <command Name="" depends="//@job.4/@command.1">
+      <tool Name="tar czvf tests_nro.tar.gz test_*.nro"/>
+    </command>
+    <command Name="" depends="//@job.4/@command.2">
+      <tool Name="tar czvf tests_nso.tar.gz test_*.nso"/>
+    </command>
+    <command Name="" depends="//@job.4/@command.3">
+      <tool Name="zip tests_nro.zip test_*.nro"/>
+    </command>
+    <command Name="" depends="//@job.4/@command.4">
+      <tool Name="zip tests_nso.zip test_*.nso"/>
+    </command>
+    <command Name="" depends="//@job.4/@command.5">
+      <tool Name="cd ../../"/>
+    </command>
+    <command Name="" depends="//@job.4/@command.6">
+      <tool Name="cd dist/"/>
+    </command>
+    <command Name="" depends="//@job.4/@command.7">
+      <tool Name="tar czvf ../libtransistor_$TRAVIS_TAG.tar.gz ./"/>
+    </command>
+    <command Name="" depends="//@job.4/@command.8">
+      <tool Name="zip -r ../libtransistor_$TRAVIS_TAG.zip ./"/>
+    </command>
+    <command Name="" depends="//@job.4/@command.9">
+      <tool Name="cd ../"/>
+    </command>
+  </job>
+  <job Name="deploy">
+    <command Name=""/>
+    <command Name="" depends="//@job.5/@command.0"/>
+  </job>
+  <environment Key="global" Value="global"/>
+</devops2:Pipeline>

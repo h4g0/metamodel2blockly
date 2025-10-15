@@ -1,0 +1,93 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="Build installers" xmi:version="2.0">
+  <when Trigger="workflow_dispatch: null&#10;"/>
+  <job Name="build">
+    <tool Name="ubuntu-latest"/>
+    <command>
+      <tool Name="actions/checkout@v3"/>
+    </command>
+    <command Name="Set up JDK for compilation" depends="//@job.0/@command.0">
+      <tool Name="actions/setup-java@v3"/>
+      <parameter Parameter="distribution: temurin&#10;java-version: '21'&#10;cache: maven&#10;"/>
+    </command>
+    <command Name="Build with Maven" depends="//@job.0/@command.1">
+      <tool Name="mvn -B clean install&#10;mvn -B -P compressXZ -f weasis-distributions clean package&#10;"/>
+    </command>
+    <command Name="Retrieve version" depends="//@job.0/@command.2">
+      <tool Name="FVERSION=$(awk -F'[&lt;&gt;]' '/&lt;revision&gt;/{print $3}' weasis-parent/pom.xml)$(awk -F'[&lt;&gt;]' '/&lt;changelist&gt;/{print $3}' weasis-parent/pom.xml)&#10;echo &quot;WEASIS_VERSION=${FVERSION}&quot; &gt;&gt; $GITHUB_ENV&#10;"/>
+    </command>
+    <command Name="Set compatible version" depends="//@job.0/@command.3">
+      <tool Name="CVERSION=$(echo $WEASIS_VERSION | sed -e 's/&quot;//g' -e 's/-.*//')&#10;echo &quot;WEASIS_CLEAN_VERSION=${CVERSION}&quot; &gt;&gt; $GITHUB_ENV&#10;"/>
+    </command>
+    <command Name="Upload the weasis package for building the native distribution" depends="//@job.0/@command.4">
+      <tool Name="actions/upload-artifact@v3"/>
+      <parameter Parameter="name: weasis-native-${{ env.WEASIS_VERSION }}&#10;path: weasis-distributions/target/native-dist/weasis-native.zip&#10;"/>
+    </command>
+    <command Name="Upload the weasis web distribution" depends="//@job.0/@command.5">
+      <tool Name="actions/upload-artifact@v3"/>
+      <parameter Parameter="name: weasis-web-${{ env.WEASIS_VERSION }}&#10;path: weasis-distributions/target/web-dist/weasis.war&#10;"/>
+    </command>
+  </job>
+  <job Name="jpackage" depends="//@job.0">
+    <environment Key="JDK_MODULES" Value="java.base,java.compiler,java.datatransfer,java.net.http,java.desktop,java.logging,java.management,java.prefs,java.xml,jdk.localedata,jdk.charsets,jdk.crypto.ec,jdk.crypto.cryptoki,jdk.unsupported,jdk.jdwp.agent"/>
+    <environment Key="NAME" Value="Weasis"/>
+    <environment Key="IDENTIFIER" Value="org.weasis.launcher"/>
+    <environment Key="WEASIS_INPUT" Value="native-dist/weasis-native/bin-dist"/>
+    <environment Key="WEASIS_OUTPUT" Value="output-dist"/>
+    <environment Key="WEASIS_INPUT_BIN" Value="native-dist/weasis-native/bin-dist/weasis"/>
+    <tool Name="${{ matrix.os }}"/>
+    <tool Name="strategy:&#10;    fail-fast: false&#10;    matrix:&#10;        include:&#10;        -   os: ubuntu-latest&#10;            platform: x64&#10;            wsystem: linux&#10;            warc: x86-64&#10;        -   os: macos-latest&#10;            platform: x64&#10;            wsystem: macosx&#10;            warc: x86-64&#10;        -   os: macos-latest-xlarge&#10;            platform: arm64&#10;            wsystem: macosx&#10;            warc: aarch64&#10;        -   os: windows-latest&#10;            platform: x64&#10;            wsystem: windows&#10;            warc: x86-64&#10;"/>
+    <command Name="Set output version from build">
+      <tool Name="echo ${{needs.build.outputs.version}}&#10;echo ${{needs.build.outputs.cleanversion}}&#10;echo &quot;WEASIS_VERSION=${{needs.build.outputs.version}}&quot; &gt;&gt; $GITHUB_ENV&#10;echo &quot;WEASIS_CLEAN_VERSION=${{needs.build.outputs.cleanversion}}&quot; &gt;&gt; $GITHUB_ENV&#10;"/>
+    </command>
+    <command Name="Set up JDK" depends="//@job.1/@command.0">
+      <tool Name="actions/setup-java@v3"/>
+      <parameter Parameter="distribution: temurin&#10;java-version: '21'&#10;"/>
+    </command>
+    <command Name="Download weasis-native" depends="//@job.1/@command.1">
+      <tool Name="actions/download-artifact@v3"/>
+      <parameter Parameter="name: weasis-native-${{ env.WEASIS_VERSION }}&#10;path: native-dist&#10;"/>
+    </command>
+    <command Name="Unzip the native package version" depends="//@job.1/@command.2">
+      <tool Name="unzip -o &quot;native-dist/weasis-native.zip&quot; -d &quot;native-dist/weasis-native&quot;&#10;"/>
+    </command>
+    <command Name="Remove binaries not related to the current architecture" depends="//@job.1/@command.3">
+      <tool Name="# Remove pack jar for launcher&#10;rm -f ${{ env.WEASIS_INPUT_BIN }}/*.jar.pack.gz&#10;# Remove the unrelated native packages&#10;find ${{ env.WEASIS_INPUT_BIN }}/bundle/weasis-opencv-core-* -type f ! -name *weasis-opencv-core-${{ matrix.wsystem }}-${{ matrix.warc }}-* -exec rm -f {} \;&#10;# Special case with 32-bit architecture, remove 64-bit lib&#10;if [ &quot;${{ matrix.warc }}&quot; = &quot;x86&quot; ] ; then&#10;  rm -f ${{ env.WEASIS_INPUT_BIN }}/bundle/weasis-opencv-core-${{ matrix.wsystem }}-x86-64-*&#10;fi&#10;echo &quot;$(ls ${{ env.WEASIS_INPUT_BIN }}/bundle/)&quot;&#10;"/>
+    </command>
+    <command Name="Build app binary with jpackage" depends="//@job.1/@ifthenelse.1/@true/@command.0">
+      <tool Name="machine=${{ matrix.wsystem }}&#10;if [ &quot;$machine&quot; = &quot;macosx&quot; ] ; then&#10;  declare -a customOptions=(&quot;--java-options&quot; &quot;-splash:\$APPDIR/resources/images/about-round.png&quot; &quot;--java-options&quot; &quot;-Dapple.laf.useScreenMenuBar=true&quot; &quot;--java-options&quot; &quot;-Dapple.awt.application.appearance=NSAppearanceNameDarkAqua&quot;)&#10;  declare -a signArgs=(&quot;--mac-package-identifier&quot; &quot;${{ env.IDENTIFIER }}&quot; &quot;--mac-signing-keychain&quot; &quot;$HOME/Library/Keychains/signing_temp.keychain-db&quot; &quot;--mac-sign&quot;)&#10;elif [ &quot;$machine&quot; = &quot;windows&quot; ] ; then&#10;  declare -a customOptions=(&quot;--java-options&quot; &quot;-splash:\$APPDIR\resources\images\about-round.png&quot; )&#10;  declare -a signArgs=()&#10;else&#10;  declare -a customOptions=(&quot;--java-options&quot; &quot;-splash:\$APPDIR/resources/images/about-round.png&quot; )&#10;  declare -a signArgs=()&#10;fi&#10;declare -a commonOptions=(&quot;--java-options&quot; &quot;-Dgosh.port=17179&quot; \&#10;&quot;--java-options&quot; &quot;-Djavax.accessibility.assistive_technologies=org.weasis.launcher.EmptyAccessibilityProvider&quot; \&#10;&quot;--java-options&quot; &quot;-Djavax.accessibility.screen_magnifier_present=false&quot; &quot;--java-options&quot; &quot;--enable-preview&quot; \&#10;&quot;--java-options&quot; &quot;--add-exports=java.base/sun.net.www.protocol.http=ALL-UNNAMED&quot; &quot;--java-options&quot; &quot;--add-exports=java.base/sun.net.www.protocol.file=ALL-UNNAMED&quot; \&#10;&quot;--java-options&quot; &quot;--add-exports=java.base/sun.net.www.protocol.https=ALL-UNNAMED&quot; &quot;--java-options&quot; &quot;--add-exports=java.base/sun.net.www.protocol.ftp=ALL-UNNAMED&quot; \&#10;&quot;--java-options&quot; &quot;--add-exports=java.base/sun.net.www.protocol.jar=ALL-UNNAMED&quot; &quot;--java-options&quot; &quot;--add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED&quot; \&#10;&quot;--java-options&quot; &quot;--add-opens=java.base/java.net=ALL-UNNAMED&quot; &quot;--java-options&quot; &quot;--add-opens=java.base/java.lang=ALL-UNNAMED&quot; \&#10;&quot;--java-options&quot; &quot;--add-opens=java.base/java.security=ALL-UNNAMED&quot; &quot;--java-options&quot; &quot;--add-opens=java.base/java.io=ALL-UNNAMED&quot; \&#10;&quot;--java-options&quot; &quot;--add-opens=java.desktop/javax.imageio.stream=ALL-UNNAMED&quot; &quot;--java-options&quot; &quot;--add-opens=java.desktop/javax.imageio=ALL-UNNAMED&quot; \&#10;&quot;--java-options&quot; &quot;--add-opens=java.desktop/com.sun.awt=ALL-UNNAMED&quot; )&#10;&#10;jpackage --type app-image --input &quot;${{ env.WEASIS_INPUT_BIN }}&quot; --dest &quot;${{ env.WEASIS_OUTPUT }}&quot; --name &quot;${{ env.NAME }}&quot; \&#10;--main-jar weasis-launcher.jar --main-class org.weasis.launcher.AppLauncher --add-modules &quot;${{ env.JDK_MODULES }}&quot; \&#10;--resource-dir &quot;${{ env.RES }}&quot; --app-version &quot;${{ env.WEASIS_CLEAN_VERSION }}&quot; --add-launcher &quot;Dicomizer=${{ env.RES }}/dicomizer-launcher.properties&quot; \&#10;&quot;${signArgs[@]}&quot; &quot;${customOptions[@]}&quot; &quot;${commonOptions[@]}&quot;&#10;&#10;if [ &quot;$machine&quot; = &quot;macosx&quot; ] ; then&#10;    codesign --timestamp --entitlements &quot;${{ env.RES }}/uri-launcher.entitlements&quot; --options runtime --force -vvv --keychain &quot;$HOME/Library/Keychains/signing_temp.keychain-db&quot; --sign &quot;${{ secrets.MACOS__DEVELOPER_ID }}&quot; &quot;${{ env.RES }}/weasis-url-handler.app&quot;&#10;    cp -Rf &quot;${{ env.RES }}/weasis-url-handler.app&quot; &quot;${{ env.WEASIS_OUTPUT }}/${{ env.NAME }}.app/Contents/MacOS/&quot;&#10;    codesign --timestamp --entitlements &quot;${{ env.RES }}/uri-launcher.entitlements&quot; --options runtime --force -vvv --keychain &quot;$HOME/Library/Keychains/signing_temp.keychain-db&quot; --sign &quot;${{ secrets.MACOS__DEVELOPER_ID }}&quot; &quot;${{ env.WEASIS_OUTPUT }}/${{ env.NAME }}.app&quot;&#10;fi&#10;&#10;echo &quot;$(ls -la ${{ env.WEASIS_OUTPUT }})&quot;&#10;"/>
+      <parameter Parameter="RES: native-dist/weasis-native/build/script/resources/${{ matrix.wsystem }}&#10;"/>
+    </command>
+    <command Name="Build package with jpackage" depends="//@job.1/@command.5">
+      <tool Name="mkdir -p final-dist&#10;machine=${{ matrix.wsystem }}&#10;ARC_NAME=${{ matrix.warc }}&#10;if [ &quot;$machine&quot; = &quot;windows&quot; ] ; then&#10;  [ &quot;$ARC_NAME&quot; = &quot;x86&quot; ] &amp;&amp; UPGRADE_UID=&quot;3aedc24e-48a8-4623-ab39-0c3c01c7383b&quot; || UPGRADE_UID=&quot;3aedc24e-48a8-4623-ab39-0c3c01c7383a&quot;&#10;  jpackage --type &quot;msi&quot; --app-image &quot;${{ env.WEASIS_OUTPUT }}/${{ env.NAME }}&quot; --dest &quot;${{ env.WEASIS_OUTPUT }}&quot; --name &quot;${{ env.NAME }}&quot; --resource-dir &quot;${{ env.RES }}/msi/${ARC_NAME}&quot; \&#10;  --license-file &quot;${{ env.WEASIS_INPUT }}/Licence.txt&quot; --description &quot;Weasis DICOM viewer&quot; --win-upgrade-uuid &quot;$UPGRADE_UID&quot; \&#10;  --win-menu --win-menu-group &quot;${{ env.NAME }}&quot; --copyright &quot;${{ env.COPYRIGHT }}&quot; --app-version &quot;${{ env.WEASIS_CLEAN_VERSION }}&quot; \&#10;  --vendor &quot;${{ env.VENDOR }}&quot; --file-associations &quot;${{ env.FILE_ASSOC }}&quot; --verbose&#10;  cp ${{ env.WEASIS_OUTPUT }}/*.msi final-dist/${{ env.NAME }}-${{ env.WEASIS_CLEAN_VERSION }}-${ARC_NAME}.msi&#10;elif [ &quot;$machine&quot; = &quot;linux&quot; ] ; then&#10;  if [ &quot;${ARC_NAME}&quot; = &quot;x86&quot; ] ; then&#10;    declare -a installerTypes=(&quot;deb&quot;)&#10;  else&#10;    declare -a installerTypes=(&quot;deb&quot; &quot;rpm&quot;)&#10;  fi&#10;  for installerType in ${installerTypes[@]}; do&#10;    [ &quot;${installerType}&quot; = &quot;rpm&quot; ] &amp;&amp; DEPENDENCIES=&quot;&quot; || DEPENDENCIES=&quot;libstdc++6, libgcc1&quot;&#10;    jpackage --type &quot;${installerType}&quot; --app-image &quot;${{ env.WEASIS_OUTPUT }}/${{ env.NAME }}&quot; --dest &quot;${{ env.WEASIS_OUTPUT }}&quot; --name &quot;${{ env.NAME }}&quot; --resource-dir &quot;${{ env.RES }}&quot; \&#10;    --license-file &quot;${{ env.WEASIS_INPUT }}/Licence.txt&quot; --description &quot;Weasis DICOM viewer&quot; --vendor &quot;${{ env.VENDOR }}&quot; \&#10;    --copyright &quot;${{ env.COPYRIGHT }}&quot; --app-version &quot;${{ env.WEASIS_CLEAN_VERSION }}&quot; --file-associations &quot;${{ env.FILE_ASSOC }}&quot; \&#10;    --linux-app-release &quot;1&quot; --linux-package-name &quot;weasis&quot; --linux-deb-maintainer &quot;Nicolas Roduit&quot; --linux-rpm-license-type &quot;EPL-2.0&quot; \&#10;    --linux-menu-group &quot;Viewer;MedicalSoftware;Graphics;&quot; --linux-app-category &quot;science&quot; --linux-package-deps &quot;${DEPENDENCIES}&quot; --linux-shortcut --verbose&#10;    cp ${{ env.WEASIS_OUTPUT }}/*.${installerType} final-dist&#10;  done&#10;elif [ &quot;$machine&quot; = &quot;macosx&quot; ] ; then&#10;  # Do not set verbose for public build&#10;  jpackage --type &quot;pkg&quot; --app-image &quot;${{ env.WEASIS_OUTPUT }}/${{ env.NAME }}.app&quot; --dest &quot;${{ env.WEASIS_OUTPUT }}&quot; --name &quot;${{ env.NAME }}&quot; --resource-dir &quot;${{ env.RES }}&quot; \&#10;  --license-file &quot;${{ env.WEASIS_INPUT }}/Licence.txt&quot; --copyright &quot;${{ env.COPYRIGHT }}&quot; --app-version &quot;${{ env.WEASIS_CLEAN_VERSION }}&quot; --mac-package-identifier &quot;${{ env.IDENTIFIER }}&quot; \&#10;  --mac-signing-keychain &quot;$HOME/Library/Keychains/signing_temp.keychain-db&quot; --mac-sign&#10;  cp ${{ env.WEASIS_OUTPUT }}/*.pkg final-dist/${{ env.NAME }}-${{ env.WEASIS_CLEAN_VERSION }}-${ARC_NAME}.pkg&#10;fi&#10;echo &quot;APP_ARTIFACT=weasis-${machine}-${ARC_NAME}-${{ env.WEASIS_CLEAN_VERSION }}&quot; &gt;&gt; $GITHUB_ENV&#10;"/>
+      <parameter Parameter="RES: native-dist/weasis-native/build/script/resources/${{ matrix.wsystem }}&#10;FILE_ASSOC: native-dist/weasis-native/build/script/file-associations.properties&#10;VENDOR: Weasis Team&#10;COPYRIGHT: &quot;\xA9 2009-2023 Weasis Team&quot;&#10;"/>
+    </command>
+    <command Name="Upload the installer" depends="//@job.1/@ifthenelse.2/@true/@command.0">
+      <tool Name="actions/upload-artifact@v3"/>
+      <parameter Parameter="name: ${{ env.APP_ARTIFACT }}&#10;path: final-dist&#10;"/>
+    </command>
+    <ifthenelse Condition="matrix.wsystem == 'macosx'">
+      <true>
+        <command Name="Import Developer Certificate" depends="//@job.1/@command.4">
+          <tool Name="apple-actions/import-codesign-certs@v2"/>
+          <parameter Parameter="p12-file-base64: ${{ secrets.MACOS_CERTIFICATE_DEVELOPMENT }}&#10;p12-password: ${{ secrets.MACOS_CERTIFICATE_PWD }}&#10;"/>
+        </command>
+      </true>
+    </ifthenelse>
+    <ifthenelse Condition="matrix.wsystem == 'macosx'">
+      <true>
+        <command Name="Import Installer Certificate" depends="//@job.1/@ifthenelse.0/@true/@command.0">
+          <tool Name="apple-actions/import-codesign-certs@v2"/>
+          <parameter Parameter="create-keychain: 'false'&#10;keychain-password: ${{ steps.cert.outputs.keychain-password }}&#10;p12-file-base64: ${{ secrets.MACOS_CERTIFICATE_INSTALLER }}&#10;p12-password: ${{ secrets.MACOS_CERTIFICATE_PWD }}&#10;"/>
+        </command>
+      </true>
+    </ifthenelse>
+    <ifthenelse Condition="matrix.wsystem == 'macosx'">
+      <true>
+        <command Name="Notarize Build" depends="//@job.1/@command.6">
+          <tool Name="BUNDLE_PKG=&quot;final-dist/${{ env.NAME }}-${{ env.WEASIS_CLEAN_VERSION }}-${{ matrix.warc }}.pkg&quot;&#10;# create temporary files&#10;NOTARIZE_APP_LOG=$(mktemp -t notarize-app)&#10;NOTARIZE_INFO_LOG=$(mktemp -t notarize-info)&#10;&#10;# delete temporary files on exit&#10;function finish {&#10;rm &quot;$NOTARIZE_APP_LOG&quot; &quot;$NOTARIZE_INFO_LOG&quot;&#10;}&#10;trap finish EXIT&#10;&#10;&#10;# submit app for notarization&#10;if xcrun altool --notarize-app --primary-bundle-id &quot;org.test.${{ env.NAME }}&quot; --username &quot;${{ secrets.MACOS_NOTARIZATION_USER}}&quot; --password &quot;${{ secrets.MACOS_NOTARIZATION_PWD }}&quot; -f &quot;$BUNDLE_PKG&quot; &gt; &quot;$NOTARIZE_APP_LOG&quot; 2&gt;&amp;1; then&#10;cat &quot;$NOTARIZE_APP_LOG&quot;&#10;RequestUUID=$(awk -F ' = ' '/RequestUUID/ {print $2}' &quot;$NOTARIZE_APP_LOG&quot;)&#10;&#10;# check status periodically&#10;while sleep 60 &amp;&amp; date; do&#10; # check notarization status&#10; if xcrun altool --notarization-info &quot;$RequestUUID&quot; --username &quot;${{ secrets.MACOS_NOTARIZATION_USER}}&quot; --password &quot;${{ secrets.MACOS_NOTARIZATION_PWD }}&quot; &gt; &quot;$NOTARIZE_INFO_LOG&quot; 2&gt;&amp;1; then&#10;   cat &quot;$NOTARIZE_INFO_LOG&quot;&#10;&#10;   # once notarization is complete, run stapler and exit&#10;   if ! grep -q &quot;Status: in progress&quot; &quot;$NOTARIZE_INFO_LOG&quot;; then&#10;     xcrun stapler staple &quot;$BUNDLE_PKG&quot;&#10;     exit $?&#10;   fi&#10; else&#10;   cat &quot;$NOTARIZE_INFO_LOG&quot; 1&gt;&amp;2&#10;   exit 1&#10; fi&#10;done&#10;else&#10;cat &quot;$NOTARIZE_APP_LOG&quot; 1&gt;&amp;2&#10;exit 1&#10;fi&#10;"/>
+        </command>
+      </true>
+    </ifthenelse>
+  </job>
+</devops2:Pipeline>

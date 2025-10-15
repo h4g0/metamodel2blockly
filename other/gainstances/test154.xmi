@@ -1,0 +1,164 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="Test TruffleSqueak" xmi:version="2.0">
+  <when Trigger="push:&#10;    branches-ignore:&#10;    - experiements/**&#10;    paths-ignore:&#10;    - '**.md'&#10;    - docs/**&#10;    - gu-catalog.properties&#10;"/>
+  <when Trigger="pull_request:&#10;    branches:&#10;    - main&#10;    paths-ignore:&#10;    - '**.md'&#10;    - docs/**&#10;    - gu-catalog.properties&#10;"/>
+  <when Trigger="workflow_dispatch: null&#10;"/>
+  <environment Key="VERBOSE_GRAALVM_LAUNCHERS" Value="True"/>
+  <environment Key="MX_GATE_OPTS" Value="--strict-mode --omit-clean --no-warning-as-error"/>
+  <job Name="style_and_build_config">
+    <tool Name="ubuntu-20.04"/>
+    <command Name="Clone TruffleSqueak repository">
+      <tool Name="actions/checkout@v3"/>
+    </command>
+    <command Name="Set up Python" depends="//@job.0/@command.0">
+      <tool Name="actions/setup-python@v4"/>
+      <parameter Parameter="python-version: '3.8'&#10;"/>
+    </command>
+    <command Name="Set up dependencies" depends="//@job.0/@command.1">
+      <tool Name="# Download Eclipse SDK&#10;eclipse_tar_path=&quot;${RUNNER_TEMP}/eclipse.tar.gz&quot;&#10;wget --no-verbose https://archive.eclipse.org/eclipse/downloads/drops4/R-4.26-202211231800/eclipse-SDK-4.26-linux-gtk-x86_64.tar.gz -O ${eclipse_tar_path}&#10;tar -xzf ${eclipse_tar_path} -C ${RUNNER_TEMP}&#10;echo &quot;ECLIPSE_EXE=${RUNNER_TEMP}/eclipse/eclipse&quot; &gt;&gt; &quot;${GITHUB_ENV}&quot; # required by mx&#10;# Set up mx, oracle/graal, and LabsJDK21&#10;mx.trufflesqueak/utils.sh &quot;set-up-mx &amp;&amp; shallow-clone-graal &amp;&amp; set-up-labsjdk labsjdk-ce-21 ~/&quot;&#10;# Set up style dependencies&#10;sudo apt update &amp;&amp; sudo apt install python3-pip python-setuptools&#10;jq -r '.pip | to_entries[] | .key+.value' ../graal/common.json | xargs sudo pip install&#10;"/>
+    </command>
+    <command Name="Check style and perform full build" depends="//@job.0/@command.2">
+      <tool Name="mx gate ${{ env.MX_GATE_OPTS }} --tags style,fullbuild"/>
+    </command>
+  </job>
+  <job Name="build-jar">
+    <environment Key="RUN_WITH_COVERAGE" Value="${{ matrix.os == 'ubuntu-20.04' }}"/>
+    <environment Key="MX_ENV" Value="trufflesqueak-jar"/>
+    <tool Name="${{ matrix.os }}"/>
+    <tool Name="strategy:&#10;    fail-fast: false&#10;    matrix:&#10;        os:&#10;        - ubuntu-20.04&#10;        - ubuntu-20.04-aarch64&#10;        - macos-11&#10;        - windows-2022&#10;        java:&#10;        - 21&#10;"/>
+    <command Name="Clone TruffleSqueak repository">
+      <tool Name="actions/checkout@v3"/>
+      <parameter Parameter="submodules: true&#10;"/>
+    </command>
+    <command Name="Set up Python" depends="//@job.1/@command.0">
+      <tool Name="actions/setup-python@v4"/>
+      <parameter Parameter="python-version: '3.8'&#10;"/>
+    </command>
+    <command Name="Set up dependencies" depends="//@job.1/@command.1">
+      <tool Name="mx.trufflesqueak/utils.sh set-up-dependencies java${{ matrix.java }} jar"/>
+    </command>
+    <command Name="Run SystemReporter on TruffleSqueak" depends="//@job.1/@ifthenelse.1/@true/@command.0">
+      <tool Name="trufflesqueak --code &quot;(String streamContents: [:s | SystemReporter basicNew reportImage: s; reportVM: s; reportVMParameters: s]) withUnixLineEndings&quot; images/test-64bit.image"/>
+    </command>
+    <command Name="Clone Graal.js repository" depends="//@job.1/@command.3">
+      <tool Name="mx.trufflesqueak/utils.sh shallow-clone-graaljs"/>
+    </command>
+    <command Name="Zip Graal compiler dumps" depends="//@job.1/@ifthenelse.5/@true/@command.0">
+      <tool Name="[[ -d graal_dumps ]] &amp;&amp; zip -r graal_dumps.zip graal_dumps || true"/>
+    </command>
+    <command Name="Upload Graal compiler dumps" depends="//@job.1/@command.5">
+      <tool Name="actions/upload-artifact@v3"/>
+      <parameter Parameter="name: graal_dumps&#10;path: graal_dumps.zip&#10;if-no-files-found: ignore&#10;retention-days: 5&#10;"/>
+    </command>
+    <ifthenelse Condition="${{ runner.os != 'Windows' }}">
+      <true>
+        <command Name="Build GraalVM with TruffleSqueak" depends="//@job.1/@command.2">
+          <tool Name="mx.trufflesqueak/utils.sh build-graalvm ${{ matrix.java }}"/>
+        </command>
+      </true>
+    </ifthenelse>
+    <ifthenelse Condition="${{ runner.os == 'Windows' }}">
+      <true>
+        <command Name="Build GraalVM with TruffleSqueak via cmd.exe" depends="//@job.1/@ifthenelse.0/@true/@command.0">
+          <tool Name="call &quot;C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat&quot; x64&#10;call mx --env ${{ env.MX_ENV }} --no-download-progress build --dependencies GRAALVM_TRUFFLESQUEAK_JAR_JAVA${{ matrix.java }}&#10;call mx --env ${{ env.MX_ENV }} graalvm-home &gt; graalvm-home-with-forward-slashes.txt&#10;set /p GRAALVM_HOME=&lt;graalvm-home-with-forward-slashes.txt&#10;setlocal enabledelayedexpansion&#10;set &quot;GRAALVM_HOME=%GRAALVM_HOME:/=\%&quot;&#10;echo %GRAALVM_HOME%\bin&gt;&gt;%GITHUB_PATH%&#10;echo GRAALVM_HOME=%GRAALVM_HOME%&gt;&gt;%GITHUB_ENV%&#10;echo [%GRAALVM_HOME% set as $GRAALVM_HOME]&#10;"/>
+        </command>
+      </true>
+    </ifthenelse>
+    <ifthenelse Condition="${{ runner.os != 'Windows' &amp;&amp; env.RUN_WITH_COVERAGE != 'true' }}">
+      <true>
+        <command Name="Run gate with Graal compiler and Graal.js" depends="//@job.1/@command.4">
+          <tool Name="mx --disable-polyglot --dy /compiler,/graal-js gate ${{ env.MX_GATE_OPTS }} --tags build,test"/>
+        </command>
+      </true>
+    </ifthenelse>
+    <ifthenelse Condition="${{ runner.os != 'Windows' &amp;&amp; env.RUN_WITH_COVERAGE == 'true' }}">
+      <true>
+        <command Name="Run gate with Graal.js and code coverage" depends="//@job.1/@ifthenelse.2/@true/@command.0">
+          <tool Name="mx --disable-polyglot --dy /graal-js gate ${{ env.MX_GATE_OPTS }} --tags build,test --jacocout coverage"/>
+        </command>
+      </true>
+    </ifthenelse>
+    <ifthenelse Condition="${{ runner.os == 'Windows' }}">
+      <true>
+        <command Name="Run gate with Graal compiler and Graal.js via cmd.exe" depends="//@job.1/@ifthenelse.3/@true/@command.0">
+          <tool Name="call &quot;C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat&quot; x64&#10;mx --disable-polyglot --dy /compiler,/graal-js gate ${{ env.MX_GATE_OPTS }} --tags build,test&#10;"/>
+        </command>
+      </true>
+    </ifthenelse>
+    <ifthenelse Condition="${{ env.RUN_WITH_COVERAGE == 'true' &amp;&amp; job.status == 'success' }}">
+      <true>
+        <command Name="Report code coverage" depends="//@job.1/@ifthenelse.4/@true/@command.0">
+          <tool Name="bash &lt;(curl -s https://codecov.io/bash)&#10;bash &lt;(curl -Ls https://coverage.codacy.com/get.sh) report -r jacoco.xml&#10;"/>
+          <parameter Parameter="CODACY_PROJECT_TOKEN: ${{ secrets.CODACY_PROJECT_TOKEN }}&#10;"/>
+        </command>
+      </true>
+    </ifthenelse>
+  </job>
+  <job Name="build-standalone">
+    <environment Key="JAVA_VERSION" Value="21"/>
+    <environment Key="MX_ENV" Value="trufflesqueak-${{ matrix.type }}"/>
+    <environment Key="VERBOSE_GRAALVM_LAUNCHERS" Value="True"/>
+    <tool Name="${{ matrix.os }}"/>
+    <tool Name="strategy:&#10;    fail-fast: false&#10;    matrix:&#10;        os:&#10;        - ubuntu-20.04&#10;        - ubuntu-20.04-aarch64&#10;        - windows-2022&#10;        - macos-11&#10;        type:&#10;        - native&#10;        - jvm&#10;"/>
+    <command Name="Clone TruffleSqueak repository">
+      <tool Name="actions/checkout@v3"/>
+    </command>
+    <command Name="Set up Python" depends="//@job.2/@ifthenelse.1/@true/@command.0">
+      <tool Name="actions/setup-python@v4"/>
+      <parameter Parameter="python-version: '3.8'&#10;"/>
+    </command>
+    <command Name="Set up dependencies" depends="//@job.2/@command.1">
+      <tool Name="mx.trufflesqueak/utils.sh set-up-dependencies java${{ env.JAVA_VERSION }} ${{ matrix.type }}"/>
+    </command>
+    <command Name="Run SystemReporter on TruffleSqueak standalone" depends="//@job.2/@ifthenelse.3/@true/@command.0">
+      <tool Name="trufflesqueak --code &quot;(String streamContents: [:s | SystemReporter basicNew reportImage: s; reportVM: s; reportVMParameters: s]) withUnixLineEndings&quot; images/test-64bit.image"/>
+    </command>
+    <command Name="Upload TruffleSqueak standalone" depends="//@job.2/@command.3">
+      <tool Name="actions/upload-artifact@v3"/>
+      <parameter Parameter="name: trufflesqueak-${{ matrix.type }}-${{ matrix.os }}&#10;path: ${{ env.STANDALONE_TARGET }}&#10;retention-days: 7&#10;"/>
+    </command>
+    <ifthenelse Condition="${{ matrix.type == 'native' }}">
+      <true>
+        <command Name="Set up Oracle GraalVM" depends="//@job.2/@command.0">
+          <tool Name="graalvm/setup-graalvm@v1"/>
+          <parameter Parameter="java-version: ${{ env.JAVA_VERSION }}&#10;distribution: graalvm&#10;github-token: ${{ secrets.GITHUB_TOKEN }}&#10;"/>
+        </command>
+      </true>
+    </ifthenelse>
+    <ifthenelse Condition="${{ matrix.type == 'native' }}">
+      <true>
+        <command Name="Enable Oracle GraalVM" depends="//@job.2/@ifthenelse.0/@true/@command.0">
+          <tool Name="echo &quot;EXTRA_GRAALVM_HOME=$JAVA_HOME&quot; &gt;&gt; $GITHUB_ENV&#10;cat &quot;${JAVA_HOME}/LICENSE.txt&quot; &gt; &quot;${GITHUB_WORKSPACE}/LICENSE&quot;&#10;"/>
+        </command>
+      </true>
+    </ifthenelse>
+    <ifthenelse Condition="${{ runner.os != 'Windows' }}">
+      <true>
+        <command Name="Build TruffleSqueak standalone" depends="//@job.2/@command.2">
+          <tool Name="mx.trufflesqueak/utils.sh build-standalone ${{ matrix.type }} ${{ env.JAVA_VERSION }}"/>
+        </command>
+      </true>
+    </ifthenelse>
+    <ifthenelse Condition="${{ runner.os == 'Windows' }}">
+      <true>
+        <command Name="Build TruffleSqueak standalone via cmd.exe" depends="//@job.2/@ifthenelse.2/@true/@command.0">
+          <tool Name="call &quot;C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat&quot; x64&#10;if ${{ matrix.type }}==native (set &quot;DEPENDENCY_NAME=SMALLTALK_NATIVE_STANDALONE_SVM_JAVA${{ env.JAVA_VERSION }}&quot;) else (set &quot;DEPENDENCY_NAME=SMALLTALK_JAVA_STANDALONE_SVM_JAVA${{ env.JAVA_VERSION }}&quot;) &#10;call mx --env ${{ env.MX_ENV }} --no-download-progress build --dependencies %DEPENDENCY_NAME%&#10;call mx --env ${{ env.MX_ENV }} standalone-home --type ${{ matrix.type }} smalltalk &gt; standalone-home-with-forward-slashes.txt&#10;set /p STANDALONE_HOME=&lt;standalone-home-with-forward-slashes.txt&#10;setlocal enabledelayedexpansion&#10;set &quot;STANDALONE_HOME=%STANDALONE_HOME:/=\%&quot;&#10;echo %STANDALONE_HOME%\bin&gt;&gt;%GITHUB_PATH%&#10;echo [%STANDALONE_HOME%\bin added to $PATH]&#10;call mx --env ${{ env.MX_ENV }} paths %DEPENDENCY_NAME% &gt; standalone-path-with-forward-slashes.txt&#10;set /p STANDALONE_PATH=&lt;standalone-path-with-forward-slashes.txt&#10;setlocal enabledelayedexpansion&#10;set &quot;STANDALONE_PATH=%STANDALONE_PATH:/=\%&quot;&#10;copy %STANDALONE_PATH% ${{ env.STANDALONE_TARGET }}&#10;"/>
+        </command>
+      </true>
+    </ifthenelse>
+    <ifthenelse Condition="${{ matrix.type == 'jvm' || runner.os != 'macOS' }}">
+      <true>
+        <command Name="Deploy TruffleSqueak standalone" depends="//@job.2/@command.4">
+          <tool Name="mx.trufflesqueak/utils.sh deploy-asset ${{ env.STANDALONE_TARGET }} ${{ secrets.GITHUB_TOKEN }}"/>
+        </command>
+      </true>
+    </ifthenelse>
+    <ifthenelse Condition="${{ matrix.os == 'ubuntu-20.04' }}">
+      <true>
+        <command Name="Run Cuis-Smalltalk tests on TruffleSqueak standalone" depends="//@job.2/@ifthenelse.4/@true/@command.0">
+          <tool Name="mx.trufflesqueak/utils.sh download-cuis-test-image&#10;trufflesqueak --vm.ea --vm.esa --headless --experimental-options --smalltalk.resource-summary=true --compiler.TreatPerformanceWarningsAsErrors=call,instanceof,store,trivial --engine.CompilationFailureAction=ExitVM --engine.CompilationStatistics images/Cuis6.0-????.image -s src/de.hpi.swa.trufflesqueak.test/src/de/hpi/swa/trufflesqueak/test/runCuisTests.st&#10;"/>
+        </command>
+      </true>
+    </ifthenelse>
+  </job>
+</devops2:Pipeline>

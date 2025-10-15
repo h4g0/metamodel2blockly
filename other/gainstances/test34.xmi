@@ -1,0 +1,55 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="Certora" xmi:version="2.0">
+  <when Trigger="workflow_dispatch: null&#10;"/>
+  <environment Key="concurrency" Value="group: ${{ github.ref }}&#10;cancel-in-progress: true&#10;"/>
+  <job Name="verify">
+    <tool Name="ubuntu-latest"/>
+    <command>
+      <tool Name="actions/checkout@v2"/>
+    </command>
+    <command Name="Use Node.js 16" depends="//@job.0/@command.0">
+      <tool Name="actions/setup-node@v2"/>
+      <parameter Parameter="node-version: '16'&#10;"/>
+    </command>
+    <command Name="Get yarn cache directory path" depends="//@job.0/@command.1">
+      <tool Name="echo &quot;::set-output name=dir::$(yarn cache dir)&quot;"/>
+    </command>
+    <command depends="//@job.0/@command.2">
+      <tool Name="actions/cache@v2"/>
+      <parameter Parameter="path: ${{ steps.yarn-cache-dir-path.outputs.dir }}&#10;key: ${{ runner.os }}-yarnv1-dist-${{ hashFiles('**/yarn.lock') }}&#10;restore-keys: '${{ runner.os }}-yarnv1-dist-&#10;&#10;    '&#10;"/>
+    </command>
+    <command Name="Installing dependencies" depends="//@job.0/@command.3">
+      <tool Name="yarn install --frozen-lockfile"/>
+    </command>
+    <command Name="Set up Python 3.6" depends="//@job.0/@command.4">
+      <tool Name="actions/setup-python@v2"/>
+      <parameter Parameter="python-version: 3.6&#10;"/>
+    </command>
+    <command Name="Set up JRE 11" depends="//@job.0/@command.5">
+      <tool Name="actions/setup-java@v1"/>
+      <parameter Parameter="java-version: '11'&#10;java-package: jre&#10;"/>
+    </command>
+    <command Name="Install dependencies" depends="//@job.0/@command.6">
+      <tool Name="wget https://github.com/ethereum/solidity/releases/download/v0.8.7/solc-static-linux&#10;chmod +x solc-static-linux&#10;sudo mv solc-static-linux /usr/local/bin/solc&#10;wget https://github.com/ethereum/solidity/releases/download/v0.8.4/solc-static-linux&#10;chmod +x solc-static-linux&#10;sudo mv solc-static-linux /usr/local/bin/solc8.4&#10;wget https://github.com/ethereum/solidity/releases/download/v0.8.2/solc-static-linux&#10;chmod +x solc-static-linux&#10;sudo mv solc-static-linux /usr/local/bin/solc8.2&#10;wget https://github.com/ethereum/solidity/releases/download/v0.6.12/solc-static-linux&#10;chmod +x solc-static-linux&#10;sudo mv solc-static-linux /usr/local/bin/solc6.12    &#10;pip3 install certora-cli&#10;"/>
+    </command>
+    <command Name="Apply harnesses" depends="//@job.0/@command.7">
+      <tool Name="chmod +x spec/scripts/*.sh&#10;spec/scripts/applyHarnesses.sh&#10;"/>
+    </command>
+    <command Name="Sanity Trident with Certora" depends="//@job.0/@command.8">
+      <tool Name="# spec/scripts/sanityConstantProductPool.sh&#10;# spec/scripts/sanityHybridPool.sh&#10;# spec/scripts/sanityMasterDeployer.sh&#10;# spec/scripts/sanitySymbolicPool.sh&#10;# spec/scripts/sanityTridentRouter.sh&#10;"/>
+    </command>
+    <command Name="Verify Trident Router with Certora" depends="//@job.0/@command.9">
+      <tool Name="spec/scripts/verifyTridentRouterSimple.sh&#10;spec/scripts/verifyTridentRouter.sh&#10;"/>
+    </command>
+    <command Name="Verify Constant Product Pool with Certora" depends="//@job.0/@command.10">
+      <tool Name="spec/scripts/verifyConstantProductPool.sh&#10;"/>
+    </command>
+    <command Name="Verify Hybrid Pool with Certora" depends="//@job.0/@command.11">
+      <tool Name="spec/scripts/verifyHybridPool.sh&#10;"/>
+    </command>
+    <command Name="Verify Trident Libraries with Certora" depends="//@job.0/@command.12">
+      <tool Name="spec/scripts/verifyTridentMath.sh&#10;"/>
+      <parameter Parameter="CERTORAKEY: ${{ secrets.CERTORAKEY }}&#10;"/>
+    </command>
+  </job>
+</devops2:Pipeline>

@@ -1,0 +1,28 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="beta docker build and push" xmi:version="2.0">
+  <when Trigger="push:&#10;    branches:&#10;    - beta&#10;"/>
+  <job Name="beta_build_and_push">
+    <environment Key="TZ" Value="Asia/Shanghai"/>
+    <tool Name="ubuntu-latest"/>
+    <command>
+      <tool Name="docker/setup-qemu-action@v2"/>
+    </command>
+    <command depends="//@job.0/@command.0">
+      <tool Name="docker/setup-buildx-action@v2"/>
+    </command>
+    <command depends="//@job.0/@command.1">
+      <tool Name="docker/login-action@v2"/>
+      <parameter Parameter="username: ${{ secrets.DOCKERHUB_USERNAME }}&#10;password: ${{ secrets.DOCKERHUB_TOKEN }}&#10;"/>
+    </command>
+    <command depends="//@job.0/@command.2">
+      <tool Name="actions/checkout@main"/>
+      <parameter Parameter="fetch-depth: 0&#10;"/>
+    </command>
+    <command depends="//@job.0/@command.3">
+      <tool Name="git tag beta.$(date +\%y\%m\%d\%H\%M)"/>
+    </command>
+    <command depends="//@job.0/@command.4">
+      <tool Name="./docker_build_and_push.sh beta"/>
+    </command>
+  </job>
+</devops2:Pipeline>

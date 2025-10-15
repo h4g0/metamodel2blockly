@@ -1,0 +1,90 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="CI" xmi:version="2.0">
+  <when Trigger="push:&#10;    branches:&#10;    - master&#10;"/>
+  <when Trigger="pull_request:&#10;    branches:&#10;    - '*'&#10;"/>
+  <when Trigger="schedule:&#10;-   cron: 0 0 * * *&#10;"/>
+  <job Name="php-tests">
+    <tool Name="ubuntu-22.04"/>
+    <tool Name="strategy:&#10;    matrix:&#10;        php:&#10;        - '8.3'&#10;        - '8.2'&#10;        - '8.1'&#10;        - '8.0'&#10;        dependency-version:&#10;        - ''&#10;        platform-reqs:&#10;        - ''&#10;        include:&#10;        -   php: '8.0'&#10;            dependency-version: --prefer-lowest&#10;"/>
+    <command Name="Checkout">
+      <tool Name="actions/checkout@v4"/>
+    </command>
+    <command depends="//@job.0/@command.0">
+      <tool Name="actions/setup-node@v3"/>
+      <parameter Parameter="node-version: 18&#10;"/>
+    </command>
+    <command Name="Install serverless" depends="//@job.0/@command.1">
+      <tool Name="npm i -g serverless"/>
+    </command>
+    <command Name="Setup PHP" depends="//@job.0/@command.2">
+      <tool Name="shivammathur/setup-php@v2"/>
+      <parameter Parameter="php-version: ${{ matrix.php }}&#10;tools: composer:v2&#10;coverage: none&#10;ini-values: expose_php=1&#10;"/>
+    </command>
+    <command Name="Install dependencies" depends="//@job.0/@command.3">
+      <tool Name="composer update ${{ matrix.dependency-version }} --no-interaction --prefer-dist --no-progress ${{ matrix.platform-reqs }}"/>
+    </command>
+    <command Name="Execute Unit Tests" depends="//@job.0/@command.4">
+      <tool Name="vendor/bin/phpunit --testsuite small"/>
+    </command>
+  </job>
+  <job Name="phpstan">
+    <tool Name="ubuntu-22.04"/>
+    <command Name="Checkout">
+      <tool Name="actions/checkout@v4"/>
+    </command>
+    <command Name="Setup PHP" depends="//@job.1/@command.0">
+      <tool Name="shivammathur/setup-php@v2"/>
+      <parameter Parameter="php-version: '8.2'&#10;tools: composer:v2, cs2pr&#10;coverage: none&#10;"/>
+    </command>
+    <command Name="Cache Composer dependencies" depends="//@job.1/@command.1">
+      <tool Name="actions/cache@v3"/>
+      <parameter Parameter="path: ~/.composer/cache&#10;key: php-composer-locked-${{ hashFiles('composer.lock') }}&#10;restore-keys: php-composer-locked-&#10;"/>
+    </command>
+    <command Name="Install dependencies" depends="//@job.1/@command.2">
+      <tool Name="composer install --no-interaction --prefer-dist --no-progress"/>
+    </command>
+    <command Name="PHPStan" depends="//@job.1/@command.3">
+      <tool Name="vendor/bin/phpstan analyse --error-format=checkstyle | cs2pr"/>
+    </command>
+  </job>
+  <job Name="phpcs">
+    <tool Name="ubuntu-22.04"/>
+    <command Name="Checkout">
+      <tool Name="actions/checkout@v4"/>
+    </command>
+    <command Name="Setup PHP" depends="//@job.2/@command.0">
+      <tool Name="shivammathur/setup-php@v2"/>
+      <parameter Parameter="php-version: '8.2'&#10;tools: composer:v2, cs2pr&#10;coverage: none&#10;"/>
+    </command>
+    <command Name="Cache Composer dependencies" depends="//@job.2/@command.1">
+      <tool Name="actions/cache@v3"/>
+      <parameter Parameter="path: ~/.composer/cache&#10;key: php-composer-locked-${{ hashFiles('composer.lock') }}&#10;restore-keys: php-composer-locked-&#10;"/>
+    </command>
+    <command Name="Install dependencies" depends="//@job.2/@command.2">
+      <tool Name="composer install --no-interaction --prefer-dist --no-progress"/>
+    </command>
+    <command Name="PHP CS" depends="//@job.2/@command.3">
+      <tool Name="vendor/bin/phpcs -q --no-colors --report=checkstyle | cs2pr"/>
+    </command>
+  </job>
+  <job Name="js-lint">
+    <tool Name="ubuntu-22.04"/>
+    <command>
+      <tool Name="actions/checkout@v4"/>
+    </command>
+    <command depends="//@job.3/@command.0">
+      <tool Name="actions/setup-node@v3"/>
+      <parameter Parameter="node-version: 18&#10;"/>
+    </command>
+    <command depends="//@job.3/@command.1">
+      <tool Name="actions/cache@v3"/>
+      <parameter Parameter="path: ~/.npm&#10;key: ${{ runner.os }}-node-${{ hashFiles('**/package.json') }}&#10;"/>
+    </command>
+    <command depends="//@job.3/@command.2">
+      <tool Name="npm i"/>
+    </command>
+    <command depends="//@job.3/@command.3">
+      <tool Name="npm run lint"/>
+    </command>
+  </job>
+</devops2:Pipeline>

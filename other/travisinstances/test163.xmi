@@ -1,0 +1,63 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="" xmi:version="2.0">
+  <tool Name="language: c&#10;"/>
+  <tool Name="matrix:&#10;    include:&#10;    -   addons:&#10;            apt:&#10;                packages:&#10;                - build-essential&#10;                - git&#10;                - autoconf&#10;                - automake&#10;                - autopoint&#10;                - libtool&#10;                - libglib2.0-dev&#10;                - libgtk2.0-dev&#10;                - libglade2-dev&#10;                - zlib1g-dev&#10;                - libusb-1.0-0-dev&#10;                - gettext&#10;                - bison&#10;                - flex&#10;                - groff&#10;                - texinfo&#10;                - intltool&#10;                - libarchive-dev&#10;                - cmake&#10;                - ninja-build&#10;                - liblz4-dev&#10;                - liblzma-dev&#10;        os: linux&#10;        dist: xenial&#10;        sudo: required&#10;    -   os: osx&#10;"/>
+  <job Name="_linuxpackages">
+    <command Name="">
+      <tool Name="addons"/>
+      <parameter Parameter="apt:&#10;    packages:&#10;    - build-essential&#10;    - git&#10;    - autoconf&#10;    - automake&#10;    - autopoint&#10;    - libtool&#10;    - libglib2.0-dev&#10;    - libgtk2.0-dev&#10;    - libglade2-dev&#10;    - zlib1g-dev&#10;    - libusb-1.0-0-dev&#10;    - gettext&#10;    - bison&#10;    - flex&#10;    - groff&#10;    - texinfo&#10;    - intltool&#10;    - libarchive-dev&#10;    - cmake&#10;    - ninja-build&#10;    - liblz4-dev&#10;    - liblzma-dev&#10;"/>
+    </command>
+  </job>
+  <job Name="install">
+    <command Name="">
+      <tool Name="if [[ &quot;$TRAVIS_OS_NAME&quot; == &quot;osx&quot; ]]; then HOMEBREW_NO_AUTO_UPDATE=1 brew install cmake ninja gettext gtk+ libglade libarchive libtool glib libusb bison flex texinfo libiconv intltool ; brew link --force gettext libarchive ; export PKG_CONFIG_PATH=&quot;/usr/local/opt/libarchive/lib/pkgconfig&quot;; fi"/>
+    </command>
+  </job>
+  <job Name="script">
+    <command Name="">
+      <tool Name="if [[ &quot;$TRAVIS_OS_NAME&quot; == &quot;linux&quot; ]]; then export DOSUDO=sudo &amp;&amp; export setprefix=&quot;-DCMAKE_INSTALL_PREFIX=/usr&quot;; fi"/>
+    </command>
+    <command Name="" depends="//@job.2/@command.0">
+      <tool Name="git clone --depth 1 https://github.com/debrouxl/tilibs.git"/>
+    </command>
+    <command Name="" depends="//@job.2/@command.1">
+      <tool Name="cd tilibs"/>
+    </command>
+    <command Name="" depends="//@job.2/@command.2">
+      <tool Name="mkdir build &amp;&amp; cd build"/>
+    </command>
+    <command Name="" depends="//@job.2/@command.3">
+      <tool Name="cmake -GNinja .. ${setprefix}"/>
+    </command>
+    <command Name="" depends="//@job.2/@command.4">
+      <tool Name="$DOSUDO cmake --build . --target install"/>
+    </command>
+    <command Name="" depends="//@job.2/@command.5">
+      <tool Name="cd .."/>
+    </command>
+    <command Name="" depends="//@job.2/@command.6">
+      <tool Name="cd .."/>
+    </command>
+    <command Name="" depends="//@job.2/@command.7">
+      <tool Name="cd  gfm/trunk/po; intltool-update --pot; intltool-update fr; cd ../../.."/>
+    </command>
+    <command Name="" depends="//@job.2/@command.8">
+      <tool Name="cd tilp/trunk/po; intltool-update --pot; intltool-update fr; intltool-update de; cd ../../.."/>
+    </command>
+    <command Name="" depends="//@job.2/@command.9">
+      <tool Name="mkdir build &amp;&amp; cd build"/>
+    </command>
+    <command Name="" depends="//@job.2/@command.10">
+      <tool Name="cmake -GNinja .. ${setprefix}"/>
+    </command>
+    <command Name="" depends="//@job.2/@command.11">
+      <tool Name="$DOSUDO cmake --build . --target install"/>
+    </command>
+    <command Name="" depends="//@job.2/@command.12">
+      <tool Name="tilp2 --version"/>
+    </command>
+    <command Name="" depends="//@job.2/@command.13">
+      <tool Name="gfm --version"/>
+    </command>
+  </job>
+</devops2:Pipeline>

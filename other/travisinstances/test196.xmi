@@ -1,0 +1,51 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="" xmi:version="2.0">
+  <tool Name="notifications:&#10;    email: false&#10;"/>
+  <tool Name="sudo: false&#10;"/>
+  <tool Name="os:&#10;- linux&#10;"/>
+  <tool Name="language: node_js&#10;"/>
+  <tool Name="node_js:&#10;- 6.3.1&#10;"/>
+  <job Name="env">
+    <command Name="">
+      <tool Name="global"/>
+      <parameter Parameter="secure: tzpL/lQ2L2mVDS0sPY0LnJ3idspKmiOAuKFFfBZbBk4vA6NtJYveXILiskNDWK4p3JIWux/JBxgU3auXU4t7BZy7bMfUpTm0PpsMQfvDV2/rsf3QUQgYvROZkVpeH6b73hxxyTy0wfDHrb0SIUjB9IChUiSDIBjwteVAb/HuIWNKRQ6mbmkZKiQ3xHisFOG9xTkrEO31BfA+nKxUOTtXiZtoHTOWK9+H67QKd19BTRn/vJrwhTUsYqyOBAoFQjDjpAbhRNgs4YxHJz2jn1rmeE8kotf3LsfBrws07Mu9O9CnEcJKsqgJW+ezbHCO/HjLfpul/v0HtF/UQM00v5J2mDFz/ii8OWQ41TjYgkAHhtXIkMDQiM6K1x+gsaq0wm4QDX+Akg3r4sFqzhKsIuSLr1QTAMh9nn9G2asQvVJNNgH1QFvuLMF3bX1xp4l79/xoCEAWqlxx1mScYcmGFtYtQd107U5qPcHrR66vTMV5VqiZ0XapJympE+D5xIiSb4CTFGpl9+PSBk69MjynMEbGsLsudYWp6HZA5CyosxoStXxR1fD+ypqsSyzynSpThZ6IpFJ7Pk95GR3Z78CPhkNZvBvJ62xW/6/hAykWcelRHZy0N5XT2+HP+xcx77Fpqj8ZEAI6ECHNnnZ1KQROodu5LI06oZ2hiM1P1gdBx6xrljg=&#10;"/>
+    </command>
+  </job>
+  <job Name="before_install">
+    <command Name="">
+      <tool Name="eval &quot;$(curl -Ss https://raw.githubusercontent.com/neovim/bot-ci/master/scripts/travis-setup.sh) nightly-x64&quot;"/>
+    </command>
+    <command Name="" depends="//@job.1/@command.0">
+      <tool Name="if [ $TRAVIS_OS_NAME == &quot;linux&quot; ]; then export CXX=&quot;g++-4.9&quot; CC=&quot;gcc-4.9&quot; DISPLAY=:99.0; sh -e /etc/init.d/xvfb start; sleep 3; fi"/>
+    </command>
+  </job>
+  <job Name="install">
+    <command Name="">
+      <tool Name="npm install -g gulp;"/>
+    </command>
+    <command Name="" depends="//@job.2/@command.0">
+      <tool Name="npm install;"/>
+    </command>
+  </job>
+  <job Name="script">
+    <command Name="">
+      <tool Name="gulp"/>
+    </command>
+    <command Name="" depends="//@job.3/@command.0">
+      <tool Name="npm test --silent;"/>
+    </command>
+  </job>
+  <job Name="before_deploy">
+    <command Name="">
+      <tool Name="npm install -g vsce;"/>
+    </command>
+    <command Name="" depends="//@job.4/@command.0">
+      <tool Name="vsce package;"/>
+    </command>
+  </job>
+  <job Name="deploy">
+    <command Name=""/>
+    <command Name="" depends="//@job.5/@command.0"/>
+  </job>
+  <environment Key="global" Value="global"/>
+</devops2:Pipeline>

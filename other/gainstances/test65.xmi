@@ -1,0 +1,45 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="Linting" xmi:version="2.0">
+  <when Trigger="pull_request:&#10;    branches:&#10;    - master&#10;    - develop&#10;"/>
+  <when Trigger="push:&#10;    branches:&#10;    - master&#10;    - develop&#10;"/>
+  <job Name="stylelint">
+    <tool Name="ubuntu-latest"/>
+    <command>
+      <tool Name="actions/checkout@v3"/>
+    </command>
+    <command Name="stylelint" depends="//@job.0/@command.0">
+      <tool Name="reviewdog/action-stylelint@v1"/>
+      <parameter Parameter="reporter: github-pr-review&#10;stylelint_input: '**/*.css'&#10;stylelint_config: .stylelintrc.js&#10;fail_on_error: true&#10;"/>
+    </command>
+  </job>
+  <job Name="eslint">
+    <tool Name="ubuntu-latest"/>
+    <command>
+      <tool Name="actions/checkout@v3"/>
+    </command>
+    <command depends="//@job.1/@command.0">
+      <tool Name="actions/setup-node@v3"/>
+      <parameter Parameter="node-version: '16'&#10;"/>
+    </command>
+    <command Name="eslint" depends="//@job.1/@command.1">
+      <tool Name="reviewdog/action-eslint@v1"/>
+      <parameter Parameter="reporter: github-pr-review&#10;fail_on_error: true&#10;"/>
+    </command>
+  </job>
+  <job Name="phpcs">
+    <tool Name="ubuntu-latest"/>
+    <command Name="Checkout">
+      <tool Name="actions/checkout@v2"/>
+    </command>
+    <command Name="Set PHP version" depends="//@job.2/@command.0">
+      <tool Name="shivammathur/setup-php@v2"/>
+      <parameter Parameter="php-version: '7.3'&#10;coverage: none&#10;tools: composer:v2&#10;"/>
+    </command>
+    <command Name="composer install" depends="//@job.2/@command.1">
+      <tool Name="composer install"/>
+    </command>
+    <command Name="PHPCS check" depends="//@job.2/@command.2">
+      <tool Name="./vendor/bin/phpcs ."/>
+    </command>
+  </job>
+</devops2:Pipeline>

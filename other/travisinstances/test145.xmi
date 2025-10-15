@@ -1,0 +1,14 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="" xmi:version="2.0">
+  <tool Name="language: cpp&#10;"/>
+  <tool Name="matrix:&#10;    include:&#10;    -   os: osx&#10;        osx_image: xcode10.1&#10;        sudo: true&#10;        compiler:&#10;        - clang&#10;        addons:&#10;            homebrew:&#10;                packages:&#10;                - cmake&#10;                - fftw&#10;                - libsamplerate&#10;                - libsndfile&#10;                - libtag&#10;                - boost&#10;                - boost-python3&#10;                - python3&#10;                - numpy&#10;                - matplotlib&#10;                - scipy&#10;                - lcov&#10;                - libyaml&#10;                - ffmpeg&#10;                - taglib&#10;                - readline&#10;                - sqlite&#10;                - gdbm&#10;                - freetype&#10;                - libpng&#10;                - chromaprint&#10;                - pkg-config&#10;                - libmagic&#10;        script:&#10;        - cd ${TRAVIS_BUILD_DIR}&#10;        - sh mac_travis.sh&#10;        after_success:&#10;        - cd ${TRAVIS_BUILD_DIR}&#10;        - lcov --directory . --capture --output-file coverage.info&#10;        - lcov --remove coverage.info '/usr/*' --output-file coverage.info&#10;        - lcov --list coverage.info&#10;        - bash &lt;(curl -s https://codecov.io/bash)&#10;"/>
+  <tool Name="notifications:&#10;    email: false&#10;"/>
+  <when Trigger="only:&#10;- master&#10;"/>
+  <job Name="env">
+    <command Name="">
+      <tool Name="global"/>
+      <parameter Parameter="-   CODECOV_TOKEN =: 69069f21-5a1a-4d45-a6c2-e7a5af9bd63d&#10;"/>
+    </command>
+  </job>
+  <environment Key="global" Value="global"/>
+</devops2:Pipeline>

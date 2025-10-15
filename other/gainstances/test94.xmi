@@ -1,0 +1,32 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="Node.js CI" xmi:version="2.0">
+  <when Trigger="push:&#10;    branches:&#10;    - main&#10;    - beta&#10;"/>
+  <when Trigger="pull_request:&#10;    branches:&#10;    - '*'&#10;"/>
+  <job Name="build">
+    <permission Key="contents" Value="write"/>
+    <permission Key="id-token" Value="write"/>
+    <permission Key="pull-requests" Value="write"/>
+    <tool Name="ubuntu-latest"/>
+    <tool Name="strategy:&#10;    matrix:&#10;        node-version:&#10;        - 18.15.0&#10;"/>
+    <command>
+      <tool Name="actions/checkout@v3"/>
+    </command>
+    <command Name="Use Node.js ${{ matrix.node-version }}" depends="//@job.0/@command.0">
+      <tool Name="actions/setup-node@v3"/>
+      <parameter Parameter="node-version: ${{ matrix.node-version }}&#10;"/>
+    </command>
+    <command depends="//@job.0/@command.1">
+      <tool Name="npm ci"/>
+    </command>
+    <command depends="//@job.0/@command.2">
+      <tool Name="npm run test"/>
+    </command>
+    <command depends="//@job.0/@command.3">
+      <tool Name="npm run build"/>
+    </command>
+    <command Name="Semantic Release" depends="//@job.0/@command.4">
+      <tool Name="cycjimmy/semantic-release-action@8e58d20d0f6c8773181f43eb74d6a05e3099571d"/>
+      <parameter Parameter="branches: &quot;[\n  'main',\n  {\n    name: 'beta',\n    prerelease: true\n  }\n]\n&quot;&#10;"/>
+    </command>
+  </job>
+</devops2:Pipeline>

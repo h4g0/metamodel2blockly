@@ -1,0 +1,22 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="Tests" xmi:version="2.0">
+  <when Trigger="push:&#10;    paths-ignore:&#10;    - docs/**&#10;    branches:&#10;    - master&#10;    - next&#10;"/>
+  <when Trigger="pull_request:&#10;    paths-ignore:&#10;    - docs/**&#10;"/>
+  <job Name="unit-test">
+    <tool Name="ubuntu-latest"/>
+    <command Name="Checkout">
+      <tool Name="actions/checkout@v2"/>
+    </command>
+    <command Name="Use Node.js LTS" depends="//@job.0/@command.0">
+      <tool Name="actions/setup-node@v1"/>
+      <parameter Parameter="node-version: 16.x&#10;"/>
+    </command>
+    <command depends="//@job.0/@command.1">
+      <tool Name="bahmutov/npm-install@v1"/>
+    </command>
+    <command Name="Unit Tests" depends="//@job.0/@command.2">
+      <tool Name="make test"/>
+      <parameter Parameter="CI: true&#10;"/>
+    </command>
+  </job>
+</devops2:Pipeline>
