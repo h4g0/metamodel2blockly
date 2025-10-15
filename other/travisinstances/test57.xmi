@@ -1,7 +1,0 @@
-<?xml version='1.0' encoding='UTF-8'?>
-<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="" xmi:version="2.0">
-  <tool Name="language: ruby&#10;"/>
-  <tool Name="rvm: 2.0.0&#10;"/>
-  <tool Name="notifications:&#10;    slack:&#10;        secure: ROE+Zo+A6JmTjxCRGG539YaoEcLrsInEIrTDQMgtn5ucLaiPiau96VO+GJ4MyxZm2M5qlSRMFCxb3jFexCRVZctuUF2hFcXVi6a/+JGhMmYLd6XMNezhlxWwOoSx6ufSAlrlXEalsdnkzqVHuH2Y50ao/3slNo58DdLoaRJiGAc=&#10;"/>
-  <when Trigger="except:&#10;- gh-pages&#10;- gh-pages-dev&#10;"/>
-</devops2:Pipeline>

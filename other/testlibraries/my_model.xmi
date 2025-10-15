@@ -1,4 +1,0 @@
-<?xml version='1.0' encoding='UTF-8'?>
-<mypackage:Person xmlns:xmi="http://www.omg.org/XMI" xmlns:mypackage="http://www.example.org/mypackage" name="John Doe" age="30" xmi:version="2.0">
-  <address street="123 Main St" city="Anytown"/>
-</mypackage:Person>

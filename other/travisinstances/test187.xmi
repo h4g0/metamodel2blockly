@@ -1,7 +1,0 @@
-<?xml version='1.0' encoding='UTF-8'?>
-<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="" xmi:version="2.0">
-  <job Name="install"/>
-  <job Name="script"/>
-  <tool Name="language: c&#10;"/>
-  <tool Name="notifications:&#10;    email:&#10;        on_success: never&#10;"/>
-</devops2:Pipeline>

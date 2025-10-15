@@ -1,7 +1,0 @@
-<?xml version='1.0' encoding='UTF-8'?>
-<devops2:Pipeline xmlns:xmi="http://www.omg.org/XMI" xmlns:devops2="http://www.example.org/devops2" Name="Behat Testing" xmi:version="2.0">
-  <when Trigger="push:&#10;    paths:&#10;    - .github/workflows/behat-test.yml&#10;    - '**.php'&#10;    - '**.feature'&#10;    - behat.yml&#10;    - composer.json&#10;"/>
-  <when Trigger="pull_request:&#10;    paths:&#10;    - .github/workflows/behat-test.yml&#10;    - '**.php'&#10;    - '**.feature'&#10;    - behat.yml&#10;    - composer.json&#10;    types:&#10;    - opened&#10;    - reopened&#10;    - synchronize&#10;"/>
-  <when Trigger="workflow_dispatch: null&#10;"/>
-  <job Name="behat"/>
-</devops2:Pipeline>
