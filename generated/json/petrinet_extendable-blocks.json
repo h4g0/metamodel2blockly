@@ -1,0 +1,135 @@
+{
+  "PetriNet": {
+    "type": "PetriNet",
+    "message0": "PetriNet name %1 nodes %2 arcs %3",
+    "args0": [
+      {
+        "type": "field_input",
+        "name": "name",
+        "text": ""
+      },
+      {
+        "type": "input_statement",
+        "name": "NODES",
+        "check": [
+          "RefNodes"
+        ]
+      },
+      {
+        "type": "input_statement",
+        "name": "ARCS",
+        "check": [
+          "RefArcs"
+        ]
+      }
+    ],
+    "colour": 225,
+    "previousStatement": null,
+    "nextStatement": null
+  },
+  "RefPetriNets": {
+    "type": "RefPetriNets",
+    "message0": "RefPetriNets",
+    "args0": [],
+    "colour": 79,
+    "output": "RefPetriNets"
+  },
+  "Node": {
+    "type": "Node",
+    "message0": "Node name %1",
+    "args0": [
+      {
+        "type": "field_input",
+        "name": "name",
+        "text": ""
+      }
+    ],
+    "colour": 83,
+    "output": "Node"
+  },
+  "Arc": {
+    "type": "Arc",
+    "message0": "Arc name %1 target %2 source %3",
+    "args0": [
+      {
+        "type": "field_input",
+        "name": "name",
+        "text": ""
+      },
+      {
+        "type": "input_value",
+        "name": "TARGET",
+        "check": [
+          "RefNodes"
+        ]
+      },
+      {
+        "type": "input_value",
+        "name": "SOURCE",
+        "check": [
+          "RefNodes"
+        ]
+      }
+    ],
+    "colour": 243,
+    "previousStatement": null,
+    "nextStatement": null
+  },
+  "RefArcs": {
+    "type": "RefArcs",
+    "message0": "RefArcs",
+    "args0": [],
+    "colour": 272,
+    "output": "RefArcs"
+  },
+  "RefNodes": {
+    "type": "RefNodes",
+    "message0": "RefNodes",
+    "args0": [],
+    "colour": 322,
+    "output": "RefNodes"
+  },
+  "Transition": {
+    "type": "Transition",
+    "message0": "Transition",
+    "args0": [],
+    "colour": 258,
+    "output": "Transition"
+  },
+  "Place": {
+    "type": "Place",
+    "message0": "Place marking %1",
+    "args0": [
+      {
+        "type": "input_statement",
+        "name": "MARKING",
+        "check": [
+          "RefTokens"
+        ]
+      }
+    ],
+    "colour": 321,
+    "previousStatement": null,
+    "nextStatement": null
+  },
+  "Token": {
+    "type": "Token",
+    "message0": "Token name %1",
+    "args0": [
+      {
+        "type": "field_input",
+        "name": "name",
+        "text": ""
+      }
+    ],
+    "colour": 279,
+    "output": "Token"
+  },
+  "RefTokens": {
+    "type": "RefTokens",
+    "message0": "RefTokens",
+    "args0": [],
+    "colour": 333,
+    "output": "RefTokens"
+  }
+}

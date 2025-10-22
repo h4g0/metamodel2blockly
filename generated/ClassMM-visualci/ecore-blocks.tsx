@@ -1,0 +1,155 @@
+// Custom Ecore model blocks for Blockly
+// Generated automatically from metamodel
+
+export const ECORE_BLOCKS = [
+  {
+  "type": "Classifier",
+  "message0": "Classifier name %1",
+  "args0": [
+    {
+      "type": "field_input",
+      "name": "name",
+      "text": ""
+    }
+  ],
+  "colour": 295,
+  "output": "Classifier"
+},
+  {
+  "type": "Association",
+  "message0": "Association name %1 src %2 dest %3",
+  "args0": [
+    {
+      "type": "field_input",
+      "name": "name",
+      "text": ""
+    },
+    {
+      "type": "input_value",
+      "name": "SRC",
+      "check": [
+        "Class"
+      ]
+    },
+    {
+      "type": "input_value",
+      "name": "DEST",
+      "check": [
+        "Class"
+      ]
+    }
+  ],
+  "colour": 139,
+  "previousStatement": null,
+  "nextStatement": null
+},
+  {
+  "type": "Attribute",
+  "message0": "Attribute name %1 is_primary %2 type %3",
+  "args0": [
+    {
+      "type": "field_input",
+      "name": "name",
+      "text": ""
+    },
+    {
+      "type": "field_input",
+      "name": "is_primary",
+      "text": ""
+    },
+    {
+      "type": "input_value",
+      "name": "TYPE",
+      "check": [
+        "Classifier"
+      ]
+    }
+  ],
+  "colour": 96,
+  "previousStatement": null,
+  "nextStatement": null
+},
+  {
+  "type": "Class",
+  "message0": "Class is_persistent %1 attrs %2 parent %3",
+  "args0": [
+    {
+      "type": "field_input",
+      "name": "is_persistent",
+      "text": ""
+    },
+    {
+      "type": "input_statement",
+      "name": "ATTRS",
+      "check": [
+        "Attribute"
+      ]
+    },
+    {
+      "type": "input_value",
+      "name": "PARENT",
+      "check": [
+        "Class"
+      ]
+    }
+  ],
+  "colour": 211,
+  "previousStatement": null,
+  "nextStatement": null
+},
+  {
+  "type": "PrimitiveDataType",
+  "message0": "PrimitiveDataType",
+  "args0": [],
+  "colour": 235,
+  "output": "PrimitiveDataType"
+},
+  {
+  "type": "ClassModel",
+  "message0": "ClassModel classifier %1 association %2",
+  "args0": [
+    {
+      "type": "input_statement",
+      "name": "CLASSIFIER",
+      "check": [
+        "Classifier"
+      ]
+    },
+    {
+      "type": "input_statement",
+      "name": "ASSOCIATION",
+      "check": [
+        "Association"
+      ]
+    }
+  ],
+  "colour": 41,
+  "previousStatement": null,
+  "nextStatement": null
+},
+] as const;
+
+export const ECORE_TOOLBOX = {
+  kind: "flyoutToolbox" as const,
+  contents: [
+    {kind: "block" as const, type: "Classifier"},
+    {kind: "block" as const, type: "Association"},
+    {kind: "block" as const, type: "Attribute"},
+    {kind: "block" as const, type: "Class"},
+    {kind: "block" as const, type: "PrimitiveDataType"},
+    {kind: "block" as const, type: "ClassModel"},
+  ],
+} as const;
+
+// Helper function to register blocks with Blockly
+export function registerEcoreBlocks() {
+  ECORE_BLOCKS.forEach((blockDef) => {
+    if (typeof Blockly !== 'undefined' && Blockly.Blocks) {
+      Blockly.Blocks[blockDef.type] = {
+        init: function() {
+          this.jsonInit(blockDef);
+        }
+      };
+    }
+  });
+}

@@ -1,0 +1,108 @@
+{
+  "TasksModel": {
+    "type": "TasksModel",
+    "message0": "TasksModel author %1 projects %2",
+    "args0": [
+      {
+        "type": "field_input",
+        "name": "author",
+        "text": ""
+      },
+      {
+        "type": "input_statement",
+        "name": "PROJECTS",
+        "check": [
+          "Project"
+        ]
+      }
+    ],
+    "colour": 312,
+    "previousStatement": null,
+    "nextStatement": null
+  },
+  "Task": {
+    "type": "Task",
+    "message0": "Task name %1",
+    "args0": [
+      {
+        "type": "field_input",
+        "name": "name",
+        "text": ""
+      }
+    ],
+    "colour": 131,
+    "output": "Task"
+  },
+  "Project": {
+    "type": "Project",
+    "message0": "Project name %1 tasks %2 model %3",
+    "args0": [
+      {
+        "type": "field_input",
+        "name": "name",
+        "text": ""
+      },
+      {
+        "type": "input_statement",
+        "name": "TASKS",
+        "check": [
+          "Task"
+        ]
+      },
+      {
+        "type": "input_value",
+        "name": "MODEL",
+        "check": [
+          "TasksModel"
+        ]
+      }
+    ],
+    "colour": 90,
+    "previousStatement": null,
+    "nextStatement": null
+  },
+  "Label": {
+    "type": "Label",
+    "message0": "Label",
+    "args0": [],
+    "colour": 252,
+    "output": "Label"
+  },
+  "PersonalProj": {
+    "type": "PersonalProj",
+    "message0": "PersonalProj",
+    "args0": [],
+    "colour": 130,
+    "output": "PersonalProj"
+  },
+  "TeamProj": {
+    "type": "TeamProj",
+    "message0": "TeamProj",
+    "args0": [],
+    "colour": 198,
+    "output": "TeamProj"
+  },
+  "Simple": {
+    "type": "Simple",
+    "message0": "Simple",
+    "args0": [],
+    "colour": 116,
+    "output": "Simple"
+  },
+  "Composite": {
+    "type": "Composite",
+    "message0": "Composite subtasks %1",
+    "args0": [
+      {
+        "type": "input_statement",
+        "name": "SUBTASKS",
+        "check": [
+          "Simple"
+        ]
+      }
+    ],
+    "colour": 291,
+    "previousStatement": null,
+    "nextStatement": null
+  }
+}

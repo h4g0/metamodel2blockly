@@ -1,0 +1,97 @@
+{
+  "Statechart": {
+    "type": "Statechart",
+    "message0": "Statechart topState %1",
+    "args0": [
+      {
+        "type": "input_value",
+        "name": "TOPSTATE",
+        "check": [
+          "AND"
+        ]
+      }
+    ],
+    "colour": 191,
+    "previousStatement": null,
+    "nextStatement": null
+  },
+  "State": {
+    "type": "State",
+    "message0": "State name %1 next %2 rnext %3 rcontains %4",
+    "args0": [
+      {
+        "type": "field_input",
+        "name": "name",
+        "text": ""
+      },
+      {
+        "type": "input_statement",
+        "name": "NEXT",
+        "check": [
+          "State"
+        ]
+      },
+      {
+        "type": "input_statement",
+        "name": "RNEXT",
+        "check": [
+          "State"
+        ]
+      },
+      {
+        "type": "input_value",
+        "name": "RCONTAINS",
+        "check": [
+          "Compound"
+        ]
+      }
+    ],
+    "colour": 103,
+    "previousStatement": null,
+    "nextStatement": null
+  },
+  "HyperEdge": {
+    "type": "HyperEdge",
+    "message0": "HyperEdge",
+    "args0": [],
+    "colour": 291,
+    "output": "HyperEdge"
+  },
+  "Basic": {
+    "type": "Basic",
+    "message0": "Basic",
+    "args0": [],
+    "colour": 7,
+    "output": "Basic"
+  },
+  "Compound": {
+    "type": "Compound",
+    "message0": "Compound contains %1",
+    "args0": [
+      {
+        "type": "input_statement",
+        "name": "CONTAINS",
+        "check": [
+          "State"
+        ]
+      }
+    ],
+    "colour": 174,
+    "previousStatement": null,
+    "nextStatement": null
+  },
+  "AND": {
+    "type": "AND",
+    "message0": "AND",
+    "args0": [],
+    "colour": 135,
+    "output": "AND"
+  },
+  "OR": {
+    "type": "OR",
+    "message0": "OR",
+    "args0": [],
+    "colour": 277,
+    "output": "OR"
+  }
+}

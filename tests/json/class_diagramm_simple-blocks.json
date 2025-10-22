@@ -1,0 +1,63 @@
+{
+  "Class": {
+    "type": "Class",
+    "message0": "Class",
+    "args0": [],
+    "colour": 211,
+    "output": "Class"
+  },
+  "Package": {
+    "type": "Package",
+    "message0": "Package",
+    "args0": [],
+    "colour": 273,
+    "output": "Package"
+  },
+  "Attribute": {
+    "type": "Attribute",
+    "message0": "Attribute",
+    "args0": [],
+    "colour": 96,
+    "output": "Attribute"
+  },
+  "DataType": {
+    "type": "DataType",
+    "message0": "DataType",
+    "args0": [],
+    "colour": 142,
+    "output": "DataType"
+  },
+  "Association": {
+    "type": "Association",
+    "message0": "Association name %1",
+    "args0": [
+      {
+        "type": "field_input",
+        "name": "name",
+        "text": ""
+      }
+    ],
+    "colour": 139,
+    "output": "Association"
+  },
+  "Method": {
+    "type": "Method",
+    "message0": "Method",
+    "args0": [],
+    "colour": 198,
+    "output": "Method"
+  },
+  "Parameter": {
+    "type": "Parameter",
+    "message0": "Parameter name %1",
+    "args0": [
+      {
+        "type": "field_input",
+        "name": "name",
+        "text": ""
+      }
+    ],
+    "colour": 3,
+    "output": "Parameter"
+  }
+}

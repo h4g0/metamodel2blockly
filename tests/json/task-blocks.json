@@ -1,0 +1,225 @@
+{
+  "TaskModel": {
+    "type": "TaskModel",
+    "message0": "TaskModel contents %1",
+    "args0": [
+      {
+        "type": "input_statement",
+        "name": "CONTENTS",
+        "check": [
+          "Content"
+        ]
+      }
+    ],
+    "colour": 206,
+    "previousStatement": null,
+    "nextStatement": null
+  },
+  "Content": {
+    "type": "Content",
+    "message0": "Content intend %1 text %2 tags %3 links %4 segments %5 images %6 parent %7 taskModel %8",
+    "args0": [
+      {
+        "type": "field_input",
+        "name": "intend",
+        "text": ""
+      },
+      {
+        "type": "field_input",
+        "name": "text",
+        "text": ""
+      },
+      {
+        "type": "input_statement",
+        "name": "TAGS",
+        "check": [
+          "Tag"
+        ]
+      },
+      {
+        "type": "input_statement",
+        "name": "LINKS",
+        "check": [
+          "Link"
+        ]
+      },
+      {
+        "type": "input_statement",
+        "name": "SEGMENTS",
+        "check": [
+          "TextSegment"
+        ]
+      },
+      {
+        "type": "input_statement",
+        "name": "IMAGES",
+        "check": [
+          "Image"
+        ]
+      },
+      {
+        "type": "input_value",
+        "name": "PARENT",
+        "check": [
+          "Container"
+        ]
+      },
+      {
+        "type": "input_value",
+        "name": "TASKMODEL",
+        "check": [
+          "TaskModel"
+        ]
+      }
+    ],
+    "colour": 141,
+    "previousStatement": null,
+    "nextStatement": null
+  },
+  "Task": {
+    "type": "Task",
+    "message0": "Task",
+    "args0": [],
+    "colour": 131,
+    "output": "Task"
+  },
+  "Note": {
+    "type": "Note",
+    "message0": "Note",
+    "args0": [],
+    "colour": 306,
+    "output": "Note"
+  },
+  "Project": {
+    "type": "Project",
+    "message0": "Project",
+    "args0": [],
+    "colour": 90,
+    "output": "Project"
+  },
+  "GlobalTaskModel": {
+    "type": "GlobalTaskModel",
+    "message0": "GlobalTaskModel",
+    "args0": [],
+    "colour": 166,
+    "output": "GlobalTaskModel"
+  },
+  "Container": {
+    "type": "Container",
+    "message0": "Container children %1",
+    "args0": [
+      {
+        "type": "input_statement",
+        "name": "CHILDREN",
+        "check": [
+          "Content"
+        ]
+      }
+    ],
+    "colour": 176,
+    "previousStatement": null,
+    "nextStatement": null
+  },
+  "EmptyLine": {
+    "type": "EmptyLine",
+    "message0": "EmptyLine",
+    "args0": [],
+    "colour": 346,
+    "output": "EmptyLine"
+  },
+  "Code": {
+    "type": "Code",
+    "message0": "Code lang %1",
+    "args0": [
+      {
+        "type": "field_input",
+        "name": "lang",
+        "text": ""
+      }
+    ],
+    "colour": 174,
+    "output": "Code"
+  },
+  "TextSegment": {
+    "type": "TextSegment",
+    "message0": "TextSegment offset %1 length %2 content %3",
+    "args0": [
+      {
+        "type": "field_input",
+        "name": "offset",
+        "text": ""
+      },
+      {
+        "type": "field_input",
+        "name": "length",
+        "text": ""
+      },
+      {
+        "type": "input_value",
+        "name": "CONTENT",
+        "check": [
+          "Content"
+        ]
+      }
+    ],
+    "colour": 150,
+    "previousStatement": null,
+    "nextStatement": null
+  },
+  "Tag": {
+    "type": "Tag",
+    "message0": "Tag name %1 value %2",
+    "args0": [
+      {
+        "type": "field_input",
+        "name": "name",
+        "text": ""
+      },
+      {
+        "type": "field_input",
+        "name": "value",
+        "text": ""
+      }
+    ],
+    "colour": 235,
+    "output": "Tag"
+  },
+  "Link": {
+    "type": "Link",
+    "message0": "Link url %1 description %2",
+    "args0": [
+      {
+        "type": "field_input",
+        "name": "url",
+        "text": ""
+      },
+      {
+        "type": "field_input",
+        "name": "description",
+        "text": ""
+      }
+    ],
+    "colour": 239,
+    "output": "Link"
+  },
+  "Text": {
+    "type": "Text",
+    "message0": "Text value %1",
+    "args0": [
+      {
+        "type": "field_input",
+        "name": "value",
+        "text": ""
+      }
+    ],
+    "colour": 57,
+    "output": "Text"
+  },
+  "Image": {
+    "type": "Image",
+    "message0": "Image",
+    "args0": [],
+    "colour": 195,
+    "output": "Image"
+  }
+}

@@ -1,0 +1,67 @@
+class Organization {
+}
+
+class Person {
+  title: String
+  givenName: String
+  middleName: String
+  familyName: String
+  name: FullName
+  birthDate: Date
+  gender: Gender
+  homeAddress: Address
+  phone: Phone
+}
+
+class Patient extends Person {
+  id: String {id}
+  name: FullName
+  gender: Gender
+  birthDate: Date
+  age: Integer
+  accepted: Date
+  sickness: History
+  prescriptions: String[*]
+  allergies: String[*]
+  specialReqs: String[*]
+}
+
+class Hospital {
+  name: String {id}
+  address: Address
+  phone: Phone
+}
+
+class Department {
+}
+
+class Staff extends Person {
+  joined: Date
+  education: String[*]
+  certification: String[*]
+  languages: String[*]
+}
+
+class OperationsStaff extends Staff { }
+class Doctor extends OperationsStaff {
+  specialty: String[*]
+  locations: String[*]
+}
+class Surgeon extends Doctor { }
+class Nurse extends OperationsStaff { }
+
+class AdministrativeStaff extends Staff { }
+class FrontDeskStaff extends AdministrativeStaff { }
+class Receptionist extends FrontDeskStaff { }
+
+class TechnicalStaff extends Staff { }
+class Technician extends TechnicalStaff { }
+class Technologist extends TechnicalStaff { }
+class SurgicalTechnologist extends Technologist { }
+
+# Relationships
+Organization "1" --> "*" Hospital
+Hospital "1" --> "*" Department
+Department "1" --> "*" Staff
+Hospital "*" --> "*" Person
+OperationsStaff "*" --> "*" Patient

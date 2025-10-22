@@ -1,0 +1,15 @@
+{
+  "EntityNote": {
+    "type": "EntityNote",
+    "message0": "EntityNote description %1",
+    "args0": [
+      {
+        "type": "field_input",
+        "name": "description",
+        "text": ""
+      }
+    ],
+    "colour": 167,
+    "output": "EntityNote"
+  }
+}

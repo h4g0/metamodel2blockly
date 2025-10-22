@@ -11,15 +11,13 @@ from parsebesser import parse_json_metamodel
 def get_ecore_metamodel_classes(metamodel_path):
     """Extract class info from an Ecore metamodel."""
     print(f"🧩 Detected Ecore metamodel: {os.path.basename(metamodel_path)}")
-    classes = get_metamodel_info(metamodel_path)
-    return classes
+    return get_metamodel_info(metamodel_path)
 
 
 def get_besser_metamodel_classes(metamodel_path):
     """Extract class info from a BESSER JSON metamodel."""
     print(f"⚙️  Detected BESSER metamodel: {os.path.basename(metamodel_path)}")
-    classes = parse_json_metamodel(metamodel_path)
-    return classes
+    return parse_json_metamodel(metamodel_path)
 
 
 def get_metamodel_classes(metamodel_path):
@@ -32,7 +30,6 @@ def get_metamodel_classes(metamodel_path):
     elif metamodel_path.endswith(".json"):
         return get_besser_metamodel_classes(metamodel_path)
     else:
-        # fallback: detect by content
         with open(metamodel_path, 'r', encoding='utf-8') as f:
             content = f.read(1024)
         if "<ecore:EPackage" in content:
@@ -43,80 +40,103 @@ def get_metamodel_classes(metamodel_path):
             raise ValueError(f"Unknown metamodel format for {metamodel_path}")
 
 
-def metamodel2blockly(metamodel):
-    classes = get_metamodel_classes(metamodel)
-    blocks = convert_metamodel_to_blockly(classes)
-    return blocks
-
-
-def test_metamodel2blockly(metamodel_path, output_format='web'):
+def metamodel2blockly(metamodel_path):
+    """Convert a metamodel file to Blockly JSON."""
     classes = get_metamodel_classes(metamodel_path)
-    
-    if output_format == 'web':
-        blocks = metamodel2blockly(metamodel_path)
-        model_name = os.path.splitext(os.path.basename(metamodel_path))[0]
-        
-        # Create project directory
-        project_dir = os.path.join('generated', f"{model_name}-visualci")
-        os.makedirs(project_dir, exist_ok=True)
-        
-        # Copy visualci project excluding node_modules
+    return convert_metamodel_to_blockly(classes)
+
+
+def test_metamodel2blockly(metamodel_path, output_format='web', output_base_dir='generated'):
+    """Main conversion logic for a single metamodel."""
+    blocks = metamodel2blockly(metamodel_path)
+    model_name = os.path.splitext(os.path.basename(metamodel_path))[0]
+
+    if output_format == 'json':
+        output_dir = os.path.join(output_base_dir, 'json')
+        os.makedirs(output_dir, exist_ok=True)
+        output_file = os.path.join(output_dir, f"{model_name}-blocks.json")
+        with open(output_file, 'w', encoding='utf-8') as f:
+            json.dump(blocks, f, indent=2)
+        print(f"✅ JSON Blockly spec generated at: {output_file}")
+
+    elif output_format == 'tsx':
+        os.makedirs(output_base_dir, exist_ok=True)
+        output_file = os.path.join(output_base_dir, f"{model_name}-blocks.tsx")
+        generate_tsx_blocks(blocks, output_file=output_file)
+        print(f"✅ Generated TSX components: {output_file}")
+
+    elif output_format == 'web':
+        project_dir = os.path.join(output_base_dir, f"{model_name}-visualci")
         visualci_src = os.path.join('interface', 'visualci')
+
+        # Reset and copy VisualCI
+        if os.path.exists(project_dir):
+            shutil.rmtree(project_dir)
         if os.path.exists(visualci_src):
-            # Remove existing directory for compatibility
-            if os.path.exists(project_dir):
-                shutil.rmtree(project_dir)
-            
-            # Use copytree with ignore pattern
             shutil.copytree(
                 visualci_src,
                 project_dir,
-                ignore=shutil.ignore_patterns('node_modules', '.*')  # Exclude node_modules and hidden files
+                ignore=shutil.ignore_patterns('node_modules', '.*')
             )
         else:
-            print(f"Warning: VisualCI project not found at {visualci_src}")
-        
-        # Generate and replace ecore-blocks.tsx
+            print(f"⚠️ Warning: VisualCI project not found at {visualci_src}")
+
         output_file = os.path.join(project_dir, 'ecore-blocks.tsx')
         generate_tsx_blocks(blocks, output_file=output_file)
-        print(f"✅ Generated VisualCI project in: {os.path.abspath(project_dir)}")
-    
-    elif output_format == 'tsx':
-        blocks = metamodel2blockly(metamodel_path)
-        model_name = os.path.splitext(os.path.basename(metamodel_path))[0]
-        
-        os.makedirs('generated', exist_ok=True)
-        
-        output_file = os.path.join('generated', f"{model_name}-blocks.tsx")
-        
-        template_path = os.path.join('interface', 'visualci', 'ecore-blocks.tsx')
-        if os.path.exists(template_path):
-            with open(template_path, 'r') as f:
-                template_content = f.read()
-            with open(output_file, 'w') as f:
-                f.write(template_content)
-        else:
-            print(f"Warning: Template file not found at {template_path}")
-            
-        generate_tsx_blocks(blocks, output_file=output_file)
-        print(f"✅ Generated TSX components in: {os.path.abspath(output_file)}")
-    
-    elif output_format == 'json':
-        blocks = metamodel2blockly(metamodel_path)
-        print(json.dumps(blocks, indent=2))
-    
+        print(f"✅ VisualCI project generated at: {project_dir}")
+
     else:
-        print("Available output formats:")
-        print("- web: Generates TSX Blockly components in blockly_components.tsx")
-        print("- json: Outputs Blockly JSON definition")
-        print("- tsx: Generates just the TSX file")
+        print(f"❌ Unknown output format: {output_format}")
+
+
+def run_tests_on_all_metamodels(output_format='json'):
+    """
+    Iterate through the 'metamodels/' directory and generate Blockly specs for each.
+    Saves JSON results into a top-level 'tests/' folder.
+    """
+    metamodels_dir = "metamodels"
+    tests_dir = "tests"  # New folder for test outputs
+    os.makedirs(tests_dir, exist_ok=True)
+
+    if not os.path.exists(metamodels_dir):
+        print(f"❌ No 'metamodels/' directory found.")
+        return
+
+    metamodel_files = [
+        os.path.join(metamodels_dir, f)
+        for f in os.listdir(metamodels_dir)
+        if f.endswith('.ecore') or f.endswith('.json')
+    ]
+
+    if not metamodel_files:
+        print("⚠️ No metamodel files found in 'metamodels/'.")
+        return
+
+    print(f"🔍 Found {len(metamodel_files)} metamodel(s) to process:\n")
+    for path in metamodel_files:
+        print(f"➡️  Processing {os.path.basename(path)} ...")
+        try:
+            # Save each test’s JSON result under /tests/
+            test_metamodel2blockly(path, 'json', output_base_dir=tests_dir)
+        except Exception as e:
+            print(f"❌ Error processing {path}: {e}")
+    print("\n🎉 All metamodels processed. Test outputs saved in /tests/")
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Convert Ecore or BESSER metamodels to Blockly blocks')
-    parser.add_argument('metamodel', help='Path to the Ecore (.ecore) or BESSER (.json) metamodel file')
+    parser = argparse.ArgumentParser(description='Convert Ecore or BESSER metamodels to Blockly JSON/TSX/Web projects')
+    parser.add_argument('metamodel', nargs='?', help='Path to a single metamodel (.ecore or .json)')
     parser.add_argument('--output', choices=['web', 'json', 'tsx'], default='web',
-                      help='Output format (web: full project, tsx: just blocks file, json: raw blocks)')
-    
+                        help='Output format (web, tsx, json)')
+    parser.add_argument('--run_tests', action='store_true',
+                        help='Process all metamodels in the metamodels/ directory')
+
     args = parser.parse_args()
-    test_metamodel2blockly(args.metamodel, args.output)
+
+    if args.run_tests:
+        run_tests_on_all_metamodels(output_format=args.output)
+    elif args.metamodel:
+        test_metamodel2blockly(args.metamodel, args.output)
+        print(f"output: {args.output}")
+    else:
+        parser.print_help()

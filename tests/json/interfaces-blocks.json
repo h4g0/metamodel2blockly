@@ -1,0 +1,126 @@
+{
+  "IControlDashboard": {
+    "type": "IControlDashboard",
+    "message0": "IControlDashboard",
+    "args0": [],
+    "colour": 103,
+    "output": "IControlDashboard"
+  },
+  "IDisplay": {
+    "type": "IDisplay",
+    "message0": "IDisplay curVal %1",
+    "args0": [
+      {
+        "type": "field_input",
+        "name": "curVal",
+        "text": ""
+      }
+    ],
+    "colour": 22,
+    "output": "IDisplay"
+  },
+  "IFuelometer": {
+    "type": "IFuelometer",
+    "message0": "IFuelometer",
+    "args0": [],
+    "colour": 313,
+    "output": "IFuelometer"
+  },
+  "IGauge": {
+    "type": "IGauge",
+    "message0": "IGauge curValRepDisplayed %1 val %2",
+    "args0": [
+      {
+        "type": "field_input",
+        "name": "curValRepDisplayed",
+        "text": ""
+      },
+      {
+        "type": "input_value",
+        "name": "VAL",
+        "check": [
+          "IGaugeValue"
+        ]
+      }
+    ],
+    "colour": 212,
+    "previousStatement": null,
+    "nextStatement": null
+  },
+  "IGaugeAnalogicDisplay": {
+    "type": "IGaugeAnalogicDisplay",
+    "message0": "IGaugeAnalogicDisplay",
+    "args0": [],
+    "colour": 167,
+    "output": "IGaugeAnalogicDisplay"
+  },
+  "IGaugeDigitalDisplay": {
+    "type": "IGaugeDigitalDisplay",
+    "message0": "IGaugeDigitalDisplay",
+    "args0": [],
+    "colour": 14,
+    "output": "IGaugeDigitalDisplay"
+  },
+  "IGaugeDisplay": {
+    "type": "IGaugeDisplay",
+    "message0": "IGaugeDisplay displayedVal %1",
+    "args0": [
+      {
+        "type": "field_input",
+        "name": "displayedVal",
+        "text": ""
+      }
+    ],
+    "colour": 65,
+    "output": "IGaugeDisplay"
+  },
+  "IGaugeMonotonic": {
+    "type": "IGaugeMonotonic",
+    "message0": "IGaugeMonotonic",
+    "args0": [],
+    "colour": 64,
+    "output": "IGaugeMonotonic"
+  },
+  "IGaugeValue": {
+    "type": "IGaugeValue",
+    "message0": "IGaugeValue",
+    "args0": [],
+    "colour": 203,
+    "output": "IGaugeValue"
+  },
+  "IGaugeVariant": {
+    "type": "IGaugeVariant",
+    "message0": "IGaugeVariant",
+    "args0": [],
+    "colour": 199,
+    "output": "IGaugeVariant"
+  },
+  "ILocTracker": {
+    "type": "ILocTracker",
+    "message0": "ILocTracker",
+    "args0": [],
+    "colour": 104,
+    "output": "ILocTracker"
+  },
+  "IOdometer": {
+    "type": "IOdometer",
+    "message0": "IOdometer",
+    "args0": [],
+    "colour": 81,
+    "output": "IOdometer"
+  },
+  "ISpeedometer": {
+    "type": "ISpeedometer",
+    "message0": "ISpeedometer",
+    "args0": [],
+    "colour": 333,
+    "output": "ISpeedometer"
+  },
+  "Observer": {
+    "type": "Observer",
+    "message0": "Observer",
+    "args0": [],
+    "colour": 233,
+    "output": "Observer"
+  }
+}

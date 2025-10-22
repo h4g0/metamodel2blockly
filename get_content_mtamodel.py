@@ -61,3 +61,8 @@ def parse_ecore_metamodel(ecore_file_path):
 # Example usage
 def get_metamodel_info(ecore_file_path):
     return parse_ecore_metamodel(ecore_file_path)
+
+
+
+if __name__ == "__main__":
+    print(get_metamodel_info("metamodels/petrinet_extendable.ecore"))

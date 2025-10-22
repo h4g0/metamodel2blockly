@@ -1,0 +1,152 @@
+{
+  "Module": {
+    "type": "Module",
+    "message0": "Module name %1 machines %2",
+    "args0": [
+      {
+        "type": "field_input",
+        "name": "name",
+        "text": ""
+      },
+      {
+        "type": "input_statement",
+        "name": "MACHINES",
+        "check": [
+          "Statemachine"
+        ]
+      }
+    ],
+    "colour": 62,
+    "previousStatement": null,
+    "nextStatement": null
+  },
+  "Statemachine": {
+    "type": "Statemachine",
+    "message0": "Statemachine initial %1 name %2 value %3 events %4 states %5",
+    "args0": [
+      {
+        "type": "field_input",
+        "name": "initial",
+        "text": ""
+      },
+      {
+        "type": "field_input",
+        "name": "name",
+        "text": ""
+      },
+      {
+        "type": "field_input",
+        "name": "value",
+        "text": ""
+      },
+      {
+        "type": "input_statement",
+        "name": "EVENTS",
+        "check": [
+          "Event"
+        ]
+      },
+      {
+        "type": "input_statement",
+        "name": "STATES",
+        "check": [
+          "State"
+        ]
+      }
+    ],
+    "colour": 48,
+    "previousStatement": null,
+    "nextStatement": null
+  },
+  "Event": {
+    "type": "Event",
+    "message0": "Event name %1",
+    "args0": [
+      {
+        "type": "field_input",
+        "name": "name",
+        "text": ""
+      }
+    ],
+    "colour": 51,
+    "output": "Event"
+  },
+  "State": {
+    "type": "State",
+    "message0": "State initial %1 name %2 transitions %3",
+    "args0": [
+      {
+        "type": "field_input",
+        "name": "initial",
+        "text": ""
+      },
+      {
+        "type": "field_input",
+        "name": "name",
+        "text": ""
+      },
+      {
+        "type": "input_statement",
+        "name": "TRANSITIONS",
+        "check": [
+          "Transition"
+        ]
+      }
+    ],
+    "colour": 103,
+    "previousStatement": null,
+    "nextStatement": null
+  },
+  "SimpleState": {
+    "type": "SimpleState",
+    "message0": "SimpleState value %1",
+    "args0": [
+      {
+        "type": "field_input",
+        "name": "value",
+        "text": ""
+      }
+    ],
+    "colour": 146,
+    "output": "SimpleState"
+  },
+  "CompoundState": {
+    "type": "CompoundState",
+    "message0": "CompoundState machine %1",
+    "args0": [
+      {
+        "type": "input_value",
+        "name": "MACHINE",
+        "check": [
+          "Statemachine"
+        ]
+      }
+    ],
+    "colour": 246,
+    "previousStatement": null,
+    "nextStatement": null
+  },
+  "Transition": {
+    "type": "Transition",
+    "message0": "Transition event %1 state %2",
+    "args0": [
+      {
+        "type": "input_value",
+        "name": "EVENT",
+        "check": [
+          "Event"
+        ]
+      },
+      {
+        "type": "input_value",
+        "name": "STATE",
+        "check": [
+          "State"
+        ]
+      }
+    ],
+    "colour": 258,
+    "previousStatement": null,
+    "nextStatement": null
+  }
+}
