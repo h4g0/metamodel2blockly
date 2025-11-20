@@ -66,7 +66,7 @@ def test_metamodel2blockly(metamodel_path, output_format='web', output_base_dir=
         print(f"✅ Generated TSX components: {output_file}")
 
     elif output_format == 'web':
-        project_dir = os.path.join(output_base_dir, f"{model_name}-visualci")
+        project_dir = os.path.join(output_base_dir, f"{model_name}")
         visualci_src = os.path.join('interface', 'visualci')
 
         # Reset and copy VisualCI

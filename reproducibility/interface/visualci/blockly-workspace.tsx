@@ -154,31 +154,70 @@ const BlocklyWorkspace = forwardRef<BlocklyWorkspaceRef, BlocklyWorkspaceProps>(
     // Expose methods via ref
     useImperativeHandle(ref, () => ({
       serializeWorkspace: () => {
-        if (!workspace) return ""
+        if (!workspace) {
+          console.warn("serializeWorkspace called before workspace ready")
+          return ""
+        }
+
         try {
-          // Serialize the workspace to JSON
-          const json = window.Blockly.serialization.workspaces.save(workspace)
-          const jsonString = JSON.stringify(json, null, 2)
-          // Also save directly to localStorage to ensure it's always saved
-          localStorage.setItem(STORAGE_KEY_WORKSPACE, jsonString)
-          return jsonString
+          if (window.Blockly?.serialization?.workspaces) {
+            // Serialize the workspace to JSON
+            const json = window.Blockly.serialization.workspaces.save(workspace)
+            const jsonString = JSON.stringify(json, null, 2)
+
+            // Also try to save directly to localStorage, but don't fail serialization if storage is blocked
+            try {
+              localStorage.setItem(STORAGE_KEY_WORKSPACE, jsonString)
+            } catch (storageError) {
+              console.warn("Unable to persist workspace to localStorage:", storageError)
+            }
+
+            return jsonString
+          } else {
+            console.warn("Blockly JSON serialization API unavailable, falling back to XML serialization")
+          }
         } catch (error) {
-          console.error("Error serializing workspace:", error)
+          console.error("Error serializing workspace to JSON:", error)
+        }
+
+        // Fallback to XML serialization if JSON fails or is unavailable
+        try {
+          const xml = window.Blockly.Xml.workspaceToDom(workspace)
+          const xmlText = window.Blockly.Xml.domToText(xml)
+
+          try {
+            localStorage.setItem(STORAGE_KEY_WORKSPACE, xmlText)
+          } catch (storageError) {
+            console.warn("Unable to persist workspace XML to localStorage:", storageError)
+          }
+
+          return xmlText
+        } catch (xmlError) {
+          console.error("Error serializing workspace to XML fallback:", xmlError)
           return ""
         }
       },
       loadWorkspace: (jsonData: string) => {
         if (!workspace) return
         try {
-          console.log("Loading workspace from JSON data")
+          console.log("Loading workspace from JSON/XML data")
           // Clear the workspace first
           workspace.clear()
 
-          // Parse the JSON data
-          const json = JSON.parse(jsonData)
+          const trimmed = jsonData.trim()
+          const canUseJsonSerialization =
+            window.Blockly?.serialization?.workspaces &&
+            typeof window.Blockly.serialization.workspaces.load === "function"
 
-          // Load the workspace from JSON
-          window.Blockly.serialization.workspaces.load(json, workspace)
+          if (trimmed.startsWith("<")) {
+            const xml = window.Blockly.Xml.textToDom(trimmed)
+            window.Blockly.Xml.domToWorkspace(xml, workspace)
+          } else if (canUseJsonSerialization) {
+            const json = JSON.parse(jsonData)
+            window.Blockly.serialization.workspaces.load(json, workspace)
+          } else {
+            throw new Error("Neither Blockly JSON serialization nor XML data available to load workspace")
+          }
 
           // Center the workspace view
           const blocks = workspace.getTopBlocks(false)
@@ -194,10 +233,11 @@ const BlocklyWorkspace = forwardRef<BlocklyWorkspaceRef, BlocklyWorkspaceProps>(
             onChange(xmlText, code)
           }
         } catch (error) {
-          console.error("Error loading workspace from JSON:", error)
-          alert("Error loading workspace: Invalid JSON format or incompatible workspace data")
+          console.error("Error loading workspace from data:", error)
+          alert("Error loading workspace: Invalid format or incompatible workspace data")
         }
       },
+
       clearWorkspace: () => {
         if (!workspace) return
 

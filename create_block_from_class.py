@@ -11,6 +11,8 @@ def convert_metamodel_to_blockly(metamodel):
     """Convert an Ecore-like metamodel to a Blockly JSON representation that
     mirrors the structure of the manually-fixed TSX blocks (placeholders, input
     statements, output typing, etc.).
+    
+    Ensures maximum of 4 inputs per line to prevent blocks from becoming too wide.
 
     :param metamodel: List of tuples, each containing
                       (class_name, [attributes, containments, relationships])
@@ -27,67 +29,118 @@ def convert_metamodel_to_blockly(metamodel):
         # Base structure with stable color
         block = {
             "type": class_name,
-            "message0": "",
-            "args0": [],
             "colour": _compute_colour(class_name),
         }
 
-        # Build message and args arrays
-        message_parts = [class_name]
+        # Collect all inputs to manage line breaks
+        all_inputs = []
         
         # 1. Attributes - field inputs
         if attributes:
             for attr in attributes:
-                message_parts.append(f"{attr['name']} %{len(block['args0']) + 1}")
-                field_def = {
-                    "type": "field_input",
-                    "name": attr["name"],
-                    "text": ""  # Empty default text
-                }
-                block["args0"].append(field_def)
+                all_inputs.append({
+                    "label": attr["name"],
+                    "def": {
+                        "type": "field_input",
+                        "name": attr["name"],
+                        "text": ""
+                    }
+                })
 
         # 2. Containments - input_statement (multi-child) or input_value (single child)
         if containments:
             for containment in containments:
                 if containment["many"]:
-                    message_parts.append(f"{containment['name']} %{len(block['args0']) + 1}")
-                    stmt_def = {
-                        "type": "input_statement",
-                        "name": containment["name"].upper(),
-                        "check": [containment["type"]]
-                    }
-                    block["args0"].append(stmt_def)
+                    all_inputs.append({
+                        "label": containment["name"],
+                        "def": {
+                            "type": "input_statement",
+                            "name": containment["name"].upper(),
+                            "check": [containment["type"]]
+                        }
+                    })
                 else:
-                    message_parts.append(f"{containment['name']} %{len(block['args0']) + 1}")
-                    input_val = {
-                        "type": "input_value",
-                        "name": containment["name"].upper(),
-                        "check": [containment["type"]]
-                    }
-                    block["args0"].append(input_val)
+                    all_inputs.append({
+                        "label": containment["name"],
+                        "def": {
+                            "type": "input_value",
+                            "name": containment["name"].upper(),
+                            "check": [containment["type"]]
+                        }
+                    })
 
         # 3. Relationships - input_value for references
         if relationships:
             for relationship in relationships:
                 if relationship["many"]:
-                    message_parts.append(f"{relationship['name']} %{len(block['args0']) + 1}")
-                    stmt_def = {
-                        "type": "input_statement",
-                        "name": relationship["name"].upper(),
-                        "check": [relationship["type"]]
-                    }
-                    block["args0"].append(stmt_def)
+                    all_inputs.append({
+                        "label": relationship["name"],
+                        "def": {
+                            "type": "input_statement",
+                            "name": relationship["name"].upper(),
+                            "check": [relationship["type"]]
+                        }
+                    })
                 else:
-                    message_parts.append(f"{relationship['name']} %{len(block['args0']) + 1}")
-                    input_val = {
-                        "type": "input_value",
-                        "name": relationship["name"].upper(),
-                        "check": [relationship["type"]]
-                    }
-                    block["args0"].append(input_val)
+                    all_inputs.append({
+                        "label": relationship["name"],
+                        "def": {
+                            "type": "input_value",
+                            "name": relationship["name"].upper(),
+                            "check": [relationship["type"]]
+                        }
+                    })
 
-        # Combine message parts
-        block["message0"] = " ".join(message_parts)
+        # Build messages with max 4 inputs per line
+        MAX_INPUTS_PER_LINE = 4
+        
+        # Group inputs into lines
+        lines = []
+        current_line_inputs = []
+        
+        for input_item in all_inputs:
+            current_line_inputs.append(input_item)
+            
+            # Start new line after max inputs
+            if len(current_line_inputs) >= MAX_INPUTS_PER_LINE:
+                lines.append(current_line_inputs)
+                current_line_inputs = []
+        
+        # Add remaining inputs
+        if current_line_inputs:
+            lines.append(current_line_inputs)
+        
+        # Build messages and args for each line
+        if not lines:
+            # No inputs - just class name
+            block["message0"] = class_name
+            block["args0"] = []
+        elif len(lines) == 1:
+            # Single line - simple case
+            message_parts = [class_name]
+            args = []
+            for i, input_item in enumerate(lines[0]):
+                message_parts.append(f"{input_item['label']} %{i + 1}")
+                args.append(input_item['def'])
+            block["message0"] = " ".join(message_parts)
+            block["args0"] = args
+        else:
+            # Multiple lines - each line gets its own message and args
+            for line_idx, line_inputs in enumerate(lines):
+                message_parts = []
+                args = []
+                
+                # First line includes class name
+                if line_idx == 0:
+                    message_parts.append(class_name)
+                
+                # Add inputs for this line with numbering starting at 1
+                for i, input_item in enumerate(line_inputs):
+                    message_parts.append(f"{input_item['label']} %{i + 1}")
+                    args.append(input_item['def'])
+                
+                block[f"message{line_idx}"] = " ".join(message_parts)
+                block[f"args{line_idx}"] = args
 
         # 4. Connection / output typing rules
         # Blocks with containments or relationships act as statement blocks
@@ -238,7 +291,8 @@ def generate_tsx_blocks(blockly_blocks, output_file='blockly_components.tsx'):
     
     # Generate TypeScript content
     tsx_content = "// Custom Ecore model blocks for Blockly\n"
-    tsx_content += "// Generated automatically from metamodel\n\n"
+    tsx_content += "// Generated automatically from metamodel\n"
+    tsx_content += "// Max 4 inputs per line to prevent wide blocks\n\n"
     
     # Generate ECORE_BLOCKS array with proper TypeScript typing
     tsx_content += "export const ECORE_BLOCKS = [\n"
