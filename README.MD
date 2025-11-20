@@ -1,128 +1,188 @@
 # Metamodel to Blockly Generator
 
-Converts Ecore metamodels into Blockly blocks with:
-- TSX React components generation
-- Interactive web editor
-- Stable color generation
-- TypeScript type safety
+Converts Ecore and BESSER JSON metamodels into Blockly blocks with:
+
+* TSX React component generation
+* Interactive web editor
+* Stable color generation
+* TypeScript type safety
+
+## Supported Metamodel Formats
+
+The tool accepts the following formats as input:
+
+* **Ecore metamodels** (`.ecore`)
+* **BESSER JSON metamodels** (`.json`)
+
+---
 
 ## Installation
 
 1. Clone this repository
-2. Install dependencies:
+2. Install Python dependencies:
+
 ```bash
 pip install -r requirements.txt
 ```
+
+---
 
 ## Usage
 
 ### Generate TSX Blocks
+
 ```bash
 python Model2Block.py --output tsx your_metamodel.ecore
+# or
+python Model2Block.py --output tsx your_besser_metamodel.json
 ```
 
 ### Generate Web Editor
+
 ```bash
 python Model2Block.py --output web model.ecore
+# or
+python Model2Block.py --output web model.json
 ```
 
-This will generate a directory `generated/[modelname]-visualci` containing a React app with Blockly integration.
+This creates:
 
-To run the app:
-1. Navigate to the generated directory:
+```
+generated/[modelname]-visualci
+```
+
+A full React + Blockly application.
+
+---
+
+## Running the Generated Web Application
+
+1. Navigate to the generated project:
+
 ```bash
 cd generated/[modelname]-visualci
 ```
-2. Install dependencies (only first time):
+
+2. Install dependencies:
+
+Using **npm**:
+
 ```bash
 npm install
 ```
-3. Start the development server:
+
+Using **yarn**:
+
 ```bash
-npm start
+yarn
 ```
 
-Open your browser to `http://localhost:3000` to use the Blockly editor.
+3. Start the development server:
 
-### Using the Blockly Editor
-- Drag blocks from the toolbox on the left to the workspace
-- Connect blocks together to create models
-- Use the "Export XML" button to save your model
-- Use the "Clear" button to reset the workspace
+Using **npm**:
 
-### Features
-- **Stable Colors**: Uses CRC32 hashing for consistent block colors
-- **TypeScript Support**: Generates fully typed TSX components
-- **Web Interface**: Includes export functionality and workspace controls
-- **Relationships**: Handles both containments and references
+```bash
+npm start
+# or
+npm run dev
+```
+
+Using **yarn**:
+
+```bash
+yarn start
+# or
+yarn dev
+```
+
+4. Open your browser at:
+
+```
+http://localhost:3000
+```
+
+---
+
+## Using the Blockly Editor
+
+* Drag blocks from the toolbox onto the workspace
+* Connect them to define models
+* Use **Export XML** to save models
+* Use **Clear Workspace** to start over
+
+---
+
+## Features
+
+* **Stable Colors** via CRC32 hashing
+* **Typed TSX Blocks**
+* **Full Web Interface** with live Blockly workspace
+* **Support for References & Containments**
+* **Ecore + BESSER JSON Compatible**
+
+---
 
 ## Quick Start
 
-1. Install dependencies:
 ```bash
-pip install -r requirements.txt
+python Model2Block.py --output web your_metamodel.ecore
+cd generated/yourmodel-visualci
+npm install
+npm run dev
 ```
 
-## Detailed Usage
+---
 
-### Command Line Options
-```bash
-Convert Ecore metamodels to Blockly blocks
+## Command Line Options
 
+```
 positional arguments:
-  metamodel             Path to the Ecore metamodel file
+  metamodel             Path to the .ecore or .json metamodel file
 
 optional arguments:
-  -h, --help            show this help message and exit
+  -h, --help            Show help
   --output {web,json,tsx}
-                        Output format (web: full project, tsx: just blocks
-                        file, json: raw blocks)
+                        web  : full React project
+                        tsx  : TSX blocks only
+                        json : generated raw block definitions
 ```
 
-### Examples
-
-1. Generate TSX blocks with custom filename:
-```bash
-python Model2Block.py --output tsx  model.ecore
-```
-
-2. Generate Web editor:
-```bash
-python Model2Block.py --output web  model.ecore
-```
+---
 
 ## Output Structure
 
-- **JSON Output**: `blockly_editor.json`
-  - JSON blocks
-  
-- **TSX Output**: `generated/[modelname]-blocks.tsx`
-  - React components
-  - Ready for integration with Blockly React projects
+### JSON Output (`--output json`)
 
-- **WEB Output**: `generated/[modelname]-visualci`
-  - Interactive Blockly workspace
-  - Drag-and-drop interface   
+* `blockly_editor.json`
+
+### TSX Output (`--output tsx`)
+
+* `generated/[modelname]-blocks.tsx`
+
+### Web Output (`--output web`)
+
+* `generated/[modelname]-visualci`
+
+  * React + Blockly editor
+  * Can be launched using **npm start**, **npm run dev**, **yarn start**, or **yarn dev**
+
+---
 
 ## Development
 
 ### Requirements
-- Python 3.8+
-- Packages: `pyecore`, `blockly`
-- **For web output**: Node.js and npm
+
+* Python 3.8+
+* `pyecore`, `blockly`
+* Node.js + npm **or** yarn (for web generation)
 
 ### Customization
-To modify block generation:
-1. Edit `create_block_from_class.py`
-2. Adjust color mappings and block templates
+
+Edit `create_block_from_class.py` to change block templates or color logic.
 
 ### Testing
-Generate a web project for testing:
+
 ```bash
 python Model2Block.py --output web your_metamodel.ecore
-```
-
-Generate TSX blocks:
-```bash
-python Model2Block.py --output tsx your_metamodel.ecore
+python Model2Block.py --output tsx your_metamodel.json
 ```
