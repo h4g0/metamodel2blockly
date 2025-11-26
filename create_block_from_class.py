@@ -142,14 +142,16 @@ def convert_metamodel_to_blockly(metamodel):
                 block[f"message{line_idx}"] = " ".join(message_parts)
                 block[f"args{line_idx}"] = args
 
-        # 4. Connection / output typing rules
-        # Blocks with containments or relationships act as statement blocks
+        # 4. Connection / output typing rules - FIXED
+        # All blocks should have an output type matching their class name
+        # so they can be connected via relationships
+        block["output"] = class_name
+        
+        # Blocks with containments also need statement connections
+        # to allow child blocks to be nested inside them
         if containments or relationships:
             block["previousStatement"] = None
             block["nextStatement"] = None
-        else:
-            # Leaf blocks (only attributes) act as value blocks
-            block["output"] = class_name
 
         blockly_blocks[class_name] = block
 
